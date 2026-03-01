@@ -12,7 +12,7 @@ export default function VantaCloudsBackground() {
 
     const init = async () => {
       const three = await import("three");
-      const win = window as Window & { THREE?: unknown; VANTA?: Record<string, (opts: { el: HTMLElement }) => unknown> };
+      const win = window as Window & { THREE?: unknown; VANTA?: Record<string, (opts: Record<string, unknown>) => unknown> };
       win.THREE = (three as { default?: unknown }).default ?? three;
       win.VANTA = win.VANTA || {};
 
