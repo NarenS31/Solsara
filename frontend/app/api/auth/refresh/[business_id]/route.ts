@@ -9,9 +9,9 @@ const supabase = createClient(
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { business_id: string } }
+  { params }: { params: Promise<{ business_id: string }> }
 ) {
-  const { business_id } = params;
+  const { business_id } = await params;
 
   const { data, error } = await supabase
     .from("businesses")
