@@ -33,7 +33,7 @@ export default function VantaBackground() {
           sunColor: 0xfffcf5,
           sunGlareColor: 0xfffcf5,
           sunlightColor: 0xfffcf5,
-          speed: 0.50,            // Slow, serene movement
+          speed: 0.25,            // Reduced for scroll performance
         }) as { destroy: () => void };
       }
     };

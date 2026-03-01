@@ -8,19 +8,21 @@ import { cn } from "@/lib/utils";
 
 /* ─── Motion presets ─────────────────────────────────────────── */
 const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const } },
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 const stagger = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.12 } },
+  show: { transition: { staggerChildren: 0.05 } },
 };
 
 const fadeIn = {
-  hidden: { opacity: 0, scale: 0.97 },
-  show: { opacity: 1, scale: 1, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const } },
+  hidden: { opacity: 0, scale: 0.98 },
+  show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const } },
 };
+
+const viewportFast = { once: true, amount: 0.2, margin: "0px 0px -80px 0px" };
 
 /* ─── Nav ────────────────────────────────────────────────────── */
 function Navbar() {
@@ -259,13 +261,13 @@ const COMING_SOON_MODULES = [
 
 function FeaturesBento() {
   return (
-    <section id="product" className="mx-auto max-w-5xl px-5 pb-28 md:px-10">
+    <div className="mx-auto max-w-5xl px-5 py-28 md:px-10">
       {/* Section header */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.55 }}
+        viewport={viewportFast}
+        transition={{ duration: 0.35 }}
         className="mb-12 text-center"
       >
         <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0055ff]">Platform</span>
@@ -282,10 +284,10 @@ function FeaturesBento() {
 
         {/* Hero card — Review Replies (LIVE) */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          viewport={viewportFast}
+          transition={{ duration: 0.35 }}
           className="md:col-span-7 relative overflow-hidden rounded-2xl bg-[#0055ff] p-8 text-white flex flex-col justify-between min-h-[260px]"
         >
           <div className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
@@ -319,10 +321,10 @@ function FeaturesBento() {
 
         {/* Coming soon — first card (larger, right of hero) */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.07 }}
+          viewport={viewportFast}
+          transition={{ duration: 0.35, delay: 0.05 }}
           className="md:col-span-5 relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white p-7 flex flex-col justify-between min-h-[260px]"
         >
           <div>
@@ -342,10 +344,10 @@ function FeaturesBento() {
         {COMING_SOON_MODULES.slice(1).map((mod, i) => (
           <motion.div
             key={mod.name}
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 + i * 0.05 }}
+            viewport={viewportFast}
+            transition={{ duration: 0.35, delay: 0.05 + i * 0.03 }}
             className="md:col-span-3 relative overflow-hidden rounded-2xl border border-black/[0.06] bg-[#f9fafb] p-6 flex flex-col min-h-[170px]"
           >
             <span className="inline-block rounded-full border border-black/[0.07] bg-white px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-black/25 mb-4">
@@ -362,13 +364,13 @@ function FeaturesBento() {
       <motion.p
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.3 }}
+        viewport={viewportFast}
+        transition={{ duration: 0.3 }}
         className="mt-10 text-center text-[13px] text-black/35 font-medium"
       >
         New modules ship every quarter. All included in your plan.
       </motion.p>
-    </section>
+    </div>
   );
 }
 
@@ -484,16 +486,14 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* ─ Below-fold wrapper (white bg) ─────────────── */}
-      <div className="relative z-10 bg-white">
-
-        {/* ─ How it works ───────────────────────────── */}
-        <section id="how" className="mx-auto max-w-5xl px-5 py-28 md:px-10">
+      {/* ─ How it works (white) ──────────────────────── */}
+      <section id="how" className="relative z-10 bg-white" style={{ contentVisibility: "auto" }}>
+        <div className="mx-auto max-w-5xl px-5 py-28 md:px-10">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.55 }}
+            viewport={viewportFast}
+            transition={{ duration: 0.35 }}
             className="mb-14 text-center"
           >
             <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0055ff]">How it works</span>
@@ -510,10 +510,10 @@ export default function Landing() {
             ].map((item, i) => (
               <motion.div
                 key={item.step}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
+                viewport={viewportFast}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
                 className="relative rounded-2xl border border-black/[0.06] bg-[#f9fafb] p-7"
               >
                 <span className="text-[11px] font-bold text-[#0055ff] tracking-widest mb-4 block">{item.step}</span>
@@ -522,13 +522,16 @@ export default function Landing() {
               </motion.div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ─ Features bento ─────────────────────────── */}
+      {/* ─ Features bento (blue) ────────────────────── */}
+      <section id="product" className="relative z-10 bg-[#f0f5ff]" style={{ contentVisibility: "auto" }}>
         <FeaturesBento />
+      </section>
 
-        {/* ─ Pricing ────────────────────────────────── */}
-        <section id="pricing" className="border-t border-black/[0.05] bg-[#f9fafb] px-5 py-28 md:px-10">
+      {/* ─ Pricing (white) ──────────────────────────── */}
+      <section id="pricing" className="relative z-10 bg-white border-t border-black/[0.05] px-5 py-28 md:px-10" style={{ contentVisibility: "auto" }}>
           <div className="mx-auto max-w-5xl">
             <div className="mb-14 text-center">
               <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0055ff]">Pricing</span>
@@ -541,10 +544,10 @@ export default function Landing() {
               {PLANS.map((plan, i) => (
                 <motion.div
                   key={plan.name}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  viewport={viewportFast}
+                  transition={{ duration: 0.35, delay: i * 0.05 }}
                   className={cn(
                     "flex flex-col rounded-2xl border p-7",
                     plan.primary
@@ -577,13 +580,13 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ─ CTA / waitlist ─────────────────────────── */}
-        <section className="px-5 py-28 text-center md:px-10">
+      {/* ─ CTA / waitlist (blue) ────────────────────── */}
+      <section className="relative z-10 bg-[#f0f5ff] px-5 py-28 text-center md:px-10" style={{ contentVisibility: "auto" }}>
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            viewport={viewportFast}
+            transition={{ duration: 0.35 }}
             className="mx-auto max-w-[600px]"
           >
             <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0055ff]">
@@ -619,10 +622,10 @@ export default function Landing() {
               </div>
             )}
           </motion.div>
-        </section>
+      </section>
 
-        {/* ─ Footer ─────────────────────────────────── */}
-        <footer className="border-t border-black/[0.05] px-5 py-8 md:px-10">
+      {/* ─ Footer (white) ────────────────────────────── */}
+      <footer className="relative z-10 bg-white border-t border-black/[0.05] px-5 py-8 md:px-10">
           <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 md:flex-row">
             <div className="text-[16px] font-black tracking-tight text-black">
               Sol<span className="text-[#0055ff]">sara</span>
@@ -638,9 +641,7 @@ export default function Landing() {
               ))}
             </div>
           </div>
-        </footer>
-
-      </div>
+      </footer>
     </main>
   );
 }
