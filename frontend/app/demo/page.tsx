@@ -210,7 +210,7 @@ export default function Demo() {
     // Fetch from real LLM while the "incoming" animation plays
     try {
       const customRules = rules.filter((r) => !r.locked).map((r) => r.text);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/demo/generate`, {
+      const res = await fetch("/api/demo/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
