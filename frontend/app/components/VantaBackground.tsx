@@ -48,7 +48,9 @@ export default function VantaBackground() {
         sunColor: 0xfffcf5,
         sunGlareColor: 0xfffcf5,
         sunlightColor: 0xfffcf5,
-        speed: 0.4,
+        speed: 0.3,
+        scale: 8,
+        scaleMobile: 14,
       }) as { destroy: () => void };
     }
   }, []);
