@@ -90,3 +90,57 @@ body.cursor-trail-active {
 html {
   scroll-behavior: smooth;
 }
+
+/* ─── CSS-only clouds (GPU-accelerated, no WebGL) ────────────── */
+.cloud {
+  position: absolute;
+  border-radius: 50%;
+  /* Multi-blob cloud shape via box-shadow */
+  box-shadow:
+    0 0 50px 20px rgba(255, 255, 255, 0.5),
+    30px -15px 40px 15px rgba(255, 255, 255, 0.4),
+    -25px 10px 35px 12px rgba(255, 255, 255, 0.35),
+    15px 25px 30px 10px rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.4);
+  will-change: transform;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+}
+
+.cloud-1 {
+  animation: cloud-drift-1 45s ease-in-out infinite;
+}
+.cloud-2 {
+  animation: cloud-drift-2 55s ease-in-out infinite;
+}
+.cloud-3 {
+  animation: cloud-drift-3 50s ease-in-out infinite;
+}
+.cloud-4 {
+  animation: cloud-drift-4 60s ease-in-out infinite;
+}
+.cloud-5 {
+  animation: cloud-drift-5 40s ease-in-out infinite;
+}
+
+@keyframes cloud-drift-1 {
+  0%, 100% { transform: translate(0, 0) translateZ(0); }
+  50% { transform: translate(80px, -20px) translateZ(0); }
+}
+@keyframes cloud-drift-2 {
+  0%, 100% { transform: translate(0, 0) translateZ(0); }
+  50% { transform: translate(-60px, 30px) translateZ(0); }
+}
+@keyframes cloud-drift-3 {
+  0%, 100% { transform: translate(0, 0) translateZ(0); }
+  33% { transform: translate(40px, -40px) translateZ(0); }
+  66% { transform: translate(-20px, 20px) translateZ(0); }
+}
+@keyframes cloud-drift-4 {
+  0%, 100% { transform: translate(0, 0) translateZ(0); }
+  50% { transform: translate(-100px, -15px) translateZ(0); }
+}
+@keyframes cloud-drift-5 {
+  0%, 100% { transform: translate(0, 0) translateZ(0); }
+  50% { transform: translate(50px, 25px) translateZ(0); }
+}

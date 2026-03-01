@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import CloudBackground from "./components/CloudBackground";
 
 /* ─── Motion presets ─────────────────────────────────────────── */
 const fadeUp = {
@@ -384,14 +385,8 @@ export default function Landing() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
-      {/* Static gradient — no WebGL for smooth scroll */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-[1]"
-        style={{
-          background: "linear-gradient(180deg, #e8f0ff 0%, #f0f5ff 50%, #f5f8ff 100%)",
-        }}
-      />
+      {/* CSS-only clouds — smooth scroll, no WebGL */}
+      <CloudBackground />
 
       <Navbar />
 
