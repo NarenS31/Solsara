@@ -8,9 +8,6 @@ const supabase = createClient(
   process.env.SUPABASE_KEY!
 );
 
-// Required: disable body parsing so Stripe signature verification works
-export const config = { api: { bodyParser: false } };
-
 async function safeUpdate(
   table: string,
   matchCol: string,
