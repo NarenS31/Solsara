@@ -95,13 +95,12 @@ html {
 .cloud {
   position: absolute;
   border-radius: 50%;
-  /* Multi-blob cloud shape via box-shadow */
+  background: rgba(255, 255, 255, 0.92);
   box-shadow:
-    0 0 50px 20px rgba(255, 255, 255, 0.5),
-    30px -15px 40px 15px rgba(255, 255, 255, 0.4),
-    -25px 10px 35px 12px rgba(255, 255, 255, 0.35),
-    15px 25px 30px 10px rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.4);
+    0 0 60px 20px rgba(255, 255, 255, 0.6),
+    50px -25px 0 -20px rgba(255, 255, 255, 0.7),
+    -40px 20px 0 -25px rgba(255, 255, 255, 0.65),
+    25px 35px 0 -15px rgba(255, 255, 255, 0.7);
   will-change: transform;
   transform: translateZ(0);
   -webkit-backface-visibility: hidden;

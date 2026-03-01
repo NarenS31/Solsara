@@ -10,57 +10,57 @@ export default function CloudBackground() {
       aria-hidden
       className="pointer-events-none fixed inset-0 z-[1] overflow-hidden"
       style={{
-        background: "linear-gradient(180deg, #e8f0ff 0%, #f0f5ff 50%, #f5f8ff 100%)",
+        background: "linear-gradient(180deg, #d8e8ff 0%, #e8f0ff 40%, #f0f5ff 100%)",
       }}
     >
-      {/* Cloud 1 — large, slow drift right */}
+      {/* Cloud 1 — large */}
       <div
         className="cloud cloud-1"
         style={{
-          width: "280px",
-          height: "120px",
-          top: "12%",
-          left: "-10%",
+          width: "200px",
+          height: "100px",
+          top: "8%",
+          left: "5%",
         }}
       />
-      {/* Cloud 2 — medium, drift left */}
+      {/* Cloud 2 — medium */}
       <div
         className="cloud cloud-2"
         style={{
-          width: "200px",
-          height: "80px",
-          top: "35%",
-          right: "-5%",
+          width: "160px",
+          height: "70px",
+          top: "30%",
+          right: "8%",
         }}
       />
-      {/* Cloud 3 — small, slow up-right */}
+      {/* Cloud 3 — small */}
       <div
         className="cloud cloud-3"
         style={{
-          width: "160px",
-          height: "65px",
-          top: "55%",
-          left: "15%",
+          width: "140px",
+          height: "55px",
+          top: "50%",
+          left: "20%",
         }}
       />
-      {/* Cloud 4 — large, drift left */}
+      {/* Cloud 4 — large */}
       <div
         className="cloud cloud-4"
         style={{
-          width: "240px",
-          height: "100px",
-          top: "75%",
-          right: "10%",
+          width: "180px",
+          height: "80px",
+          top: "70%",
+          right: "15%",
         }}
       />
-      {/* Cloud 5 — medium, slow right */}
+      {/* Cloud 5 — medium */}
       <div
         className="cloud cloud-5"
         style={{
-          width: "180px",
-          height: "70px",
-          top: "25%",
-          right: "25%",
+          width: "150px",
+          height: "60px",
+          top: "20%",
+          right: "35%",
         }}
       />
     </div>
