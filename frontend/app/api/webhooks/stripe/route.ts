@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
-);
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error("Missing STRIPE_SECRET_KEY");
+  return new Stripe(key);
+}
 
 async function safeUpdate(
   table: string,
@@ -18,7 +18,7 @@ async function safeUpdate(
     Object.entries(data).filter(([, v]) => v !== null && v !== undefined)
   );
   if (Object.keys(filtered).length > 0) {
-    await supabase.from(table).update(filtered).eq(matchCol, matchVal);
+    await getSupabase().from(table).update(filtered).eq(matchCol, matchVal);
   }
 }
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       payload,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   if (!customerId) return NextResponse.json({ status: "ok" });
 
-  const { data: subData } = await supabase
+  const { data: subData } = await getSupabase()
     .from("subscriptions")
     .select("business_id")
     .eq("stripe_customer_id", customerId)
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   const businessId = subData.business_id;
 
   if (event.type === "customer.subscription.created") {
-    await supabase
+    await getSupabase()
       .from("businesses")
       .update({ is_active: true })
       .eq("id", businessId);
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       cancel_at_period_end: obj.cancel_at_period_end,
     });
   } else if (event.type === "invoice.payment_failed") {
-    await supabase
+    await getSupabase()
       .from("businesses")
       .update({ is_active: false })
       .eq("id", businessId);
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       status: "past_due",
     });
   } else if (event.type === "customer.subscription.deleted") {
-    await supabase
+    await getSupabase()
       .from("businesses")
       .update({ is_active: false })
       .eq("id", businessId);

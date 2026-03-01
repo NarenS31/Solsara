@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_KEY!
-);
+import { getSupabase } from "@/lib/supabase";
 
 function createOAuthClient() {
   return new google.auth.OAuth2(
@@ -25,7 +20,7 @@ export async function GET(req: NextRequest) {
     const oauth2Client = createOAuthClient();
     const { tokens } = await oauth2Client.getToken(code);
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from("businesses")
       .insert({
         access_token: tokens.access_token,
