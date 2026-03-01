@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  // Use unknown cast so we can safely access fields across different event object shapes
-  const obj = event.data.object as Record<string, unknown>;
+  // Cast through unknown to access fields across different event object shapes
+  const obj = event.data.object as unknown as Record<string, unknown>;
   const customer = obj.customer;
   const customerId = typeof customer === "string" ? customer : (customer as Stripe.Customer | null)?.id;
 
