@@ -7,7 +7,7 @@ import VantaCloudsBackground from "./components/VantaCloudsBackground";
 
 const FADE_UP = {
     hidden: { opacity: 0, y: 24 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 const STAGGER = {
@@ -231,7 +231,7 @@ export default function Landing() {
                     <motion.div
                         initial={{ opacity: 0, x: 24 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.6, delay: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
                     >
                         <div style={{ fontFamily: "var(--font-mono)", fontSize: "10px", color: "var(--text-muted)", marginBottom: "16px", textAlign: "right", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                             Preview: Your profile on Solsara

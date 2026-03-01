@@ -335,7 +335,7 @@ export default function Demo() {
                   initial={{ opacity: 0, y: -16, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.97 }}
-                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] as const }}
                   className="relative overflow-hidden rounded-xl border border-[#0055ff]/20 bg-white shadow-[0_4px_24px_rgba(0,85,255,0.1)]"
                 >
                   {/* Blue top bar */}
@@ -647,7 +647,7 @@ export default function Demo() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }}
                     className="overflow-hidden"
                   >
                     <div className="border-t border-black/[0.06] bg-white p-4 space-y-2">

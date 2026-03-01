@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 /* ─── Motion presets ─────────────────────────────────────────── */
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 const stagger = {
@@ -19,7 +19,7 @@ const stagger = {
 
 const fadeIn = {
   hidden: { opacity: 0, scale: 0.97 },
-  show: { opacity: 1, scale: 1, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, scale: 1, transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
 /* ─── Nav ────────────────────────────────────────────────────── */
@@ -169,7 +169,7 @@ function DashboardMockup() {
                 <motion.div
                   initial={{ width: 0 }}
                   whileInView={{ width: "72%" }}
-                  transition={{ duration: 1.4, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: 1.4, delay: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
                   className="h-full rounded-full bg-[#0055ff]"
                 />
               </div>

@@ -26,12 +26,12 @@ const SLIDE = {
   center: {
     x: 0,
     opacity: 1,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
   },
   exit: (dir: number) => ({
     x: dir > 0 ? -40 : 40,
     opacity: 0,
-    transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] as const },
   }),
 };
 
@@ -429,7 +429,7 @@ function StepVoice({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] as const }}
               className="overflow-hidden"
             >
               <div className="border-t border-black/[0.06] p-4 space-y-2 bg-white">
