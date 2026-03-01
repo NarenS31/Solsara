@@ -270,11 +270,11 @@ function FeaturesBento() {
         transition={{ duration: 0.35 }}
         className="mb-12 text-center"
       >
-        <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0055ff]">Platform</span>
-        <h2 className="mt-3 text-[32px] md:text-[44px] font-black tracking-[-0.04em] text-black leading-tight">
+        <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70">Platform</span>
+        <h2 className="mt-3 text-[32px] md:text-[44px] font-black tracking-[-0.04em] text-white leading-tight">
           One platform. Your entire reputation.
         </h2>
-        <p className="mt-3 text-[15px] text-black/45 font-medium max-w-[480px] mx-auto">
+        <p className="mt-3 text-[15px] text-white/70 font-medium max-w-[480px] mx-auto">
           Start with Review Replies. Expand as you grow.
         </p>
       </motion.div>
@@ -288,7 +288,7 @@ function FeaturesBento() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={viewportFast}
           transition={{ duration: 0.35 }}
-          className="md:col-span-7 relative overflow-hidden rounded-2xl bg-[#0055ff] p-8 text-white flex flex-col justify-between min-h-[260px]"
+          className="md:col-span-7 relative overflow-hidden rounded-2xl border border-white/20 bg-[#0044dd] p-8 text-white flex flex-col justify-between min-h-[260px]"
         >
           <div className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-8 -left-8 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
@@ -366,7 +366,7 @@ function FeaturesBento() {
         whileInView={{ opacity: 1 }}
         viewport={viewportFast}
         transition={{ duration: 0.3 }}
-        className="mt-10 text-center text-[13px] text-black/35 font-medium"
+        className="mt-10 text-center text-[13px] text-white/60 font-medium"
       >
         New modules ship every quarter. All included in your plan.
       </motion.p>
@@ -526,7 +526,7 @@ export default function Landing() {
       </section>
 
       {/* ─ Features bento (blue) ────────────────────── */}
-      <section id="product" className="relative z-10 bg-[#f0f5ff]" style={{ contentVisibility: "auto" }}>
+      <section id="product" className="relative z-10 bg-[#0055ff]" style={{ contentVisibility: "auto" }}>
         <FeaturesBento />
       </section>
 
@@ -581,7 +581,7 @@ export default function Landing() {
         </section>
 
       {/* ─ CTA / waitlist (blue) ────────────────────── */}
-      <section className="relative z-10 bg-[#f0f5ff] px-5 py-28 text-center md:px-10" style={{ contentVisibility: "auto" }}>
+      <section className="relative z-10 bg-[#0055ff] px-5 py-28 text-center md:px-10" style={{ contentVisibility: "auto" }}>
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -589,19 +589,19 @@ export default function Landing() {
             transition={{ duration: 0.35 }}
             className="mx-auto max-w-[600px]"
           >
-            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0055ff]">
+            <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/80">
               Early Access
             </span>
-            <h2 className="mt-3 mb-4 text-[36px] md:text-[56px] font-black tracking-[-0.04em] text-black leading-[1.05]">
+            <h2 className="mt-3 mb-4 text-[36px] md:text-[56px] font-black tracking-[-0.04em] text-white leading-[1.05]">
               Your reputation. <br />
-              <span className="text-[#0055ff]">Automated.</span>
+              <span className="text-white">Automated.</span>
             </h2>
-            <p className="mb-8 text-[15px] text-black/45 font-medium">
+            <p className="mb-8 text-[15px] text-white/80 font-medium">
               Limited early access spots. Setup takes 3 minutes.
             </p>
 
             {submitted ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 border border-emerald-200 px-5 py-3 text-[14px] font-semibold text-emerald-600">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 border border-white/30 px-5 py-3 text-[14px] font-semibold text-white">
                 ✓ You're on the list — we'll be in touch.
               </div>
             ) : (
@@ -611,11 +611,11 @@ export default function Landing() {
                   placeholder="business@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-14 w-full rounded-full border border-black/[0.08] bg-[#f9fafb] px-6 pr-36 text-[14px] font-medium text-black placeholder:text-black/30 outline-none focus:border-[#0055ff]/30 focus:ring-2 focus:ring-[#0055ff]/10 transition-all"
+                  className="h-14 w-full rounded-full border border-white/30 bg-white/10 px-6 pr-36 text-[14px] font-medium text-white placeholder:text-white/50 outline-none focus:border-white/50 focus:ring-2 focus:ring-white/20 transition-all"
                 />
                 <button
                   onClick={() => setSubmitted(true)}
-                  className="absolute right-1.5 top-1.5 bottom-1.5 rounded-full bg-black px-5 text-[12px] font-semibold text-white hover:bg-black/85 transition-colors"
+                  className="absolute right-1.5 top-1.5 bottom-1.5 rounded-full bg-white px-5 text-[12px] font-semibold text-[#0055ff] hover:bg-white/90 transition-colors"
                 >
                   Join Phase 01
                 </button>
