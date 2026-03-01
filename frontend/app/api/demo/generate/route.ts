@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error("Missing OPENAI_API_KEY");
+  return new OpenAI({ apiKey: key });
+}
 
 const TONE_MAP: Record<string, string> = {
   warm: "Warm and personal — like talking to a trusted friend. Genuine, caring, approachable.",
@@ -40,7 +44,7 @@ Write a response. Rules:
 Return ONLY a JSON object: {"response": "your response here"}`;
 
   try {
-    const result = await client.chat.completions.create({
+    const result = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
