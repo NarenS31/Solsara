@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #f0f5ff;
+  --color-foreground: #0a0f1e;
+  --color-card: #ffffff;
+  --color-card-foreground: #0a0f1e;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0a0f1e;
+  --color-primary: #0055ff;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f0f5ff;
+  --color-secondary-foreground: #0a0f1e;
+  --color-muted: #e8eef8;
+  --color-muted-foreground: #64748b;
+  --color-accent: #0055ff;
+  --color-accent-foreground: #ffffff;
+  --color-border: rgba(0, 0, 0, 0.07);
+  --color-input: rgba(0, 0, 0, 0.07);
+  --color-ring: #0055ff;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-full: 9999px;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
+    line-height: 1.5;
+  }
+}
+
+/* ─── Glass ──────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.glass-dark {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(120%);
+  -webkit-backdrop-filter: blur(20px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ─── Cursor ─────────────────────────────────────────────────── */
+body.cursor-trail-active {
+  cursor: none;
+}
+
+/* ─── Noise texture ──────────────────────────────────────────── */
+.noise::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ─── Selections ─────────────────────────────────────────────── */
+::selection {
+  background: rgba(0, 85, 255, 0.15);
+  color: #0a0f1e;
+}
+
+/* ─── Smooth scrolling ───────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
