@@ -40,9 +40,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const obj = event.data.object as Stripe.Subscription;
-  const customerId =
-    typeof obj.customer === "string" ? obj.customer : obj.customer?.id;
+  // Use unknown cast so we can safely access fields across different event object shapes
+  const obj = event.data.object as Record<string, unknown>;
+  const customer = obj.customer;
+  const customerId = typeof customer === "string" ? customer : (customer as Stripe.Customer | null)?.id;
 
   if (!customerId) return NextResponse.json({ status: "ok" });
 
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
       .eq("id", businessId);
     await safeUpdate("subscriptions", "stripe_customer_id", customerId, {
       stripe_subscription_id: obj.id,
-      status: obj.status ?? "active",
+      status: (obj.status as string) ?? "active",
       current_period_end: obj.current_period_end,
       cancel_at_period_end: obj.cancel_at_period_end,
     });
