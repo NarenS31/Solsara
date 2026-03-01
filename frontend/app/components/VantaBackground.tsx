@@ -2,15 +2,16 @@
 
 import { useEffect, useRef, useCallback } from "react";
 
+const HERO_ID = "hero";
+
 /**
- * Vanta clouds — pauses when scrolling (smooth scroll), resumes when idle.
- * GPU-accelerated WebGL when visible, zero cost when scrolling.
+ * Vanta clouds — only hides when hero section is completely scrolled off.
+ * Stays visible while you're in the hero, disappears when you scroll past it.
  */
 export default function VantaBackground() {
   const ref = useRef<HTMLDivElement>(null);
   const effectRef = useRef<{ destroy: () => void } | null>(null);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isScrollingRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
 
   const destroy = useCallback(() => {
     if (effectRef.current?.destroy) {
@@ -55,34 +56,41 @@ export default function VantaBackground() {
   useEffect(() => {
     let mounted = true;
 
-    const onScroll = () => {
+    const checkHero = () => {
       if (!mounted) return;
 
-      if (!isScrollingRef.current) {
-        isScrollingRef.current = true;
-        destroy();
-      }
+      const hero = document.getElementById(HERO_ID);
+      if (!hero) return;
 
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
+      const rect = hero.getBoundingClientRect();
+      const heroBottom = rect.bottom;
+      const threshold = 50;
 
-      scrollTimeoutRef.current = setTimeout(() => {
-        if (!mounted) return;
-        isScrollingRef.current = false;
-        scrollTimeoutRef.current = null;
-        init();
-      }, 600);
+      // Hero completely off top of viewport → destroy
+      if (heroBottom < -threshold) {
+        if (effectRef.current) destroy();
+      }
+      // Hero in view → init (if not already)
+      else if (heroBottom > threshold) {
+        if (!effectRef.current) init();
+      }
+    };
+
+    const onScroll = () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        rafRef.current = null;
+        checkHero();
+      });
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
-
-    init();
+    checkHero();
 
     return () => {
       mounted = false;
       window.removeEventListener("scroll", onScroll);
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       destroy();
     };
   }, [init, destroy]);

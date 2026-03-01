@@ -391,7 +391,7 @@ export default function Landing() {
       <Navbar />
 
       {/* ─ Hero ─────────────────────────────────────── */}
-      <section className="relative z-10 flex flex-col items-center px-5 pt-36 pb-20 text-center">
+      <section id="hero" className="relative z-10 flex flex-col items-center px-5 pt-36 pb-20 text-center">
         <motion.div
           initial="hidden"
           animate="show"
