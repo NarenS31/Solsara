@@ -1,0 +1,47 @@
+i used the secret key isntead of the anon key
+
+So every checkout attempt creates:
+
+New Stripe customer
+
+New row in subscriptions
+
+status = pending
+
+You ran checkout 4 times.
+So you got 4 Stripe customers.
+So you got 4 pending rows.
+
+That’s normal behavior for your current code.
+
+Now here’s the real issue:
+
+Your architecture currently allows unlimited duplicate subscriptions for one business.
+
+That’s bad.
+
+You should not be inserting blindly every time.
+
+You should:
+
+Either
+
+• Check if a subscription already exists for that business
+• Or delete old pending ones
+• Or enforce a UNIQUE constraint on business_id
+
+Right now you can spam checkout forever.
+
+For now, while testing, this is fine.
+
+But long term, you need to fix it.
+
+Right now the only thing that matters:
+
+Are any of those rows changing from pending → active?
+
+If not, your webhook still isn’t firing.
+
+Tell me:
+
+When you completed payment, did your uvicorn terminal log:

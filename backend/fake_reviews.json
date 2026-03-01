@@ -1,0 +1,54 @@
+{
+    "reviews": [
+      {
+        "reviewId": "fake_review_001",
+        "name": "accounts/123/locations/456/reviews/fake_review_001",
+        "reviewer": {
+          "displayName": "John Smith"
+        },
+        "starRating": "FIVE",
+        "comment": "Amazing service! The staff was incredibly friendly and professional. Will definitely come back.",
+        "createTime": "2024-01-15T10:00:00Z"
+      },
+      {
+        "reviewId": "fake_review_002",
+        "name": "accounts/123/locations/456/reviews/fake_review_002",
+        "reviewer": {
+          "displayName": "Sarah Johnson"
+        },
+        "starRating": "ONE",
+        "comment": "Terrible experience. I waited 45 minutes and nobody helped me. The manager was rude when I complained.",
+        "createTime": "2024-01-16T14:00:00Z"
+      },
+      {
+        "reviewId": "fake_review_003",
+        "name": "accounts/123/locations/456/reviews/fake_review_003",
+        "reviewer": {
+          "displayName": "Mike Davis"
+        },
+        "starRating": "THREE",
+        "comment": "Food was okay but the service was slow. Place was clean though.",
+        "createTime": "2024-01-17T09:00:00Z"
+      },
+      {
+        "reviewId": "fake_review_004",
+        "name": "accounts/123/locations/456/reviews/fake_review_004",
+        "reviewer": {
+          "displayName": "Emily Chen"
+        },
+        "starRating": "ONE",
+        "comment": "I got food poisoning after eating here. I've been sick for 3 days. This is a health hazard.",
+        "createTime": "2024-01-18T11:00:00Z"
+      },
+      {
+        "reviewId": "fake_review_005",
+        "name": "accounts/123/locations/456/reviews/fake_review_005",
+        "reviewer": {
+          "displayName": "Robert Wilson"
+        },
+        "starRating": "FOUR",
+        "comment": "Really good experience overall. Prices are fair and the quality is great.",
+        "createTime": "2024-01-19T16:00:00Z"
+      }
+    ]
+  }

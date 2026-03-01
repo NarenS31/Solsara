@@ -1,0 +1,206 @@
+Here's every phase with the goal and exactly what you're building technically:
+
+Phase 1 — Google Cloud Setup
+Goal: Get credentials so your app can talk to Google
+What you need at the end:
+
+A GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in your .env that actually work
+Google Business Profile API enabled in your project
+Your app registered with Google so OAuth doesn't throw errors
+
+Technical what's happening:
+
+You're telling Google "my app called Solsara exists and here's where to send users after they log in"
+Google gives you a client ID and secret — these are how Google recognizes your app
+Without this nothing Google related works at all
+
+
+Phase 2 — Google OAuth Flow
+Goal: Business owner clicks "Connect Google" and their tokens get saved to your database
+What you need at the end:
+
+A /auth/google endpoint that redirects the user to Google's login page
+A /auth/callback endpoint that Google redirects back to after login
+Access token and refresh token saved to the businesses table in Supabase
+
+Technical what's happening:
+
+User hits /auth/google → your app redirects them to Google
+They log in on Google's page → Google redirects them back to /auth/callback with a temporary code
+Your app exchanges that code for an access token and refresh token
+You save both tokens plus expiry time to Supabase
+Every future Google API call uses the access token
+When access token expires you use the refresh token to get a new one automatically without the user doing anything
+
+Files you're writing:
+
+routers/auth.py — the two endpoints
+services/google.py — the token exchange and refresh logic
+
+
+Phase 3 — Review Poller
+Goal: Every 30 minutes your app automatically checks Google for new reviews for every connected business
+What you need at the end:
+
+A scheduler that wakes up every 30 minutes
+For each business in your database it calls GBP API and gets their latest reviews
+New reviews get saved to the reviews table
+Reviews you've already seen get skipped
+In DEV_MODE it reads from fake_reviews.json instead of hitting real API
+
+Technical what's happening:
+
+APScheduler runs inside your FastAPI app as a background process
+It loops through every business in Supabase where is_active = true
+For each one it calls GBP API with their access token
+It compares returned review IDs against what's already in your reviews table
+New ones get inserted, existing ones get skipped
+If a token is expired it calls your refresh logic from Phase 2 first
+
+Files you're writing:
+
+services/poller.py — the main polling logic
+scheduler.py — APScheduler setup that kicks off the poller
+fake_reviews.json — mock data for local development
+
+
+Phase 4 — LLM Response Generation + Guardrails
+Goal: For every new review generate a response and decide whether to auto-post or hold it
+What you need at the end:
+
+A function that takes a review and returns a response in the business's tone
+The same function also returns a flag — safe to post or hold for review
+Safe responses go into response_queue with status pending_post
+Risky responses go in with status held_for_review
+Owner gets emailed when something is held
+
+Technical what's happening:
+
+You call OpenAI with a prompt that contains the review text, the business tone description, and instructions to return JSON
+The JSON contains three things: the response text, a confidence score 0-1, and a flag with reason if risky
+Your code checks the flag — if risky or confidence below 0.7 it sets status to held
+Everything gets saved to response_queue
+One OpenAI call does all of this — not two separate calls
+
+Files you're writing:
+
+services/llm.py — the OpenAI call and prompt
+services/guardrails.py — the logic that reads the flag and routes to pending or held
+
+
+Phase 5 — Posting
+Goal: Take everything in response_queue with status pending_post and actually post it to Google
+What you need at the end:
+
+A function that reads pending responses from the queue
+Posts each one to GBP API
+Updates status to posted on success or failed on error
+Updates responded = true on the review
+Runs automatically after the poller finds new reviews
+
+Technical what's happening:
+
+After Phase 3 saves new reviews and Phase 4 generates responses, Phase 5 is the final step
+It queries response_queue where status = pending_post
+For each one it calls the GBP reply endpoint with the business's access token
+On success — updates response_queue.status to posted, sets posted_at to now, sets reviews.responded to true
+On failure — updates status to failed, logs the error so you can investigate
+
+Files you're writing:
+
+services/poster.py — the posting logic
+
+
+Phase 6 — Stripe
+Goal: Businesses can pay you and their account activates automatically. If they cancel or fail to pay their account deactivates automatically.
+What you need at the end:
+
+A checkout endpoint that creates a Stripe session and redirects them to pay
+A webhook endpoint that listens for Stripe events
+When payment succeeds → businesses.is_active set to true, subscription saved to subscriptions table
+When payment fails → is_active set to false, owner emailed
+When cancelled → is_active set to false
+
+Technical what's happening:
+
+You create a product and price in Stripe dashboard ($299/mo or whatever you decide)
+Your /checkout endpoint creates a Stripe Checkout Session and returns the URL
+User pays on Stripe's hosted page
+Stripe fires a webhook event to your /webhooks/stripe endpoint
+You verify the webhook signature so nobody can fake events
+You handle three events: customer.subscription.created, customer.subscription.deleted, invoice.payment_failed
+Each event updates your Supabase database accordingly
+Idempotency — if the same event fires twice you check if you've already processed it and skip it
+
+Files you're writing:
+
+routers/webhooks.py — the Stripe webhook endpoint
+Update routers/auth.py — add the checkout endpoint
+
+
+Phase 7 — Frontend
+Goal: A real interface businesses use to sign up, connect Google, pay, and see what's happening
+What you need at the end:
+
+Onboarding page — Connect Google button, 3 tone questions, Stripe checkout
+Dashboard page — recent responses posted, reviews held for manual attention, current star rating
+Held reviews page — owner can read the review, edit the response, approve it to post
+Settings page — update tone preferences, disconnect Google
+
+Technical what's happening:
+
+Next.js frontend calls your FastAPI backend via API endpoints
+Onboarding flow is a multi-step form — step 1 connect Google, step 2 answer tone questions, step 3 pay
+Dashboard polls your backend every few minutes for latest data
+Held reviews page lets owner edit the generated response and hit approve — your backend then moves it to pending_post and the poster picks it up
+Settings saves updated tone description back to Supabase via your backend
+
+Files you're writing:
+
+frontend/app/page.tsx — landing/onboarding
+frontend/app/dashboard/page.tsx — main dashboard
+frontend/app/held/page.tsx — held reviews
+frontend/app/settings/page.tsx — settings
+
+
+Phase 8 — Emails
+Goal: Businesses stay informed without logging in
+What you need at the end:
+
+Weekly summary email every Monday — how many reviews responded to, rating change, any held items
+Instant alert when a review is held for manual review
+Instant alert when their Google token expires and needs reconnecting
+
+Technical what's happening:
+
+Resend API sends transactional emails
+Weekly email triggered by a scheduler job that runs every Monday morning
+Alert emails triggered immediately when guardrails flag something or token refresh fails
+Emails are simple HTML — no fancy templates needed for v1
+
+Files you're writing:
+
+services/email.py — all email sending logic
+HTML templates for each email type
+
+
+Phase 9 — Deploy
+Goal: Solsara.ai is live on the internet, real businesses can sign up and pay
+What you need at the end:
+
+FastAPI backend running on Railway
+Next.js frontend deployed on Vercel
+solsara.ai pointing at your frontend
+All environment variables set in Railway and Vercel dashboards
+Stripe webhooks pointed at your live Railway URL
+End to end test with a real Google Business account
+
+Technical what's happening:
+
+Push your code to GitHub
+Railway detects your Python app and deploys it automatically
+You set all your .env variables in Railway's dashboard
+Vercel deploys your Next.js frontend from the same or separate repo
+You update your domain DNS to point at Vercel
+You update Stripe webhook URL from localhost to your Railway URL
+You test the full flow — sign up, connect Google, pay, see a review get responded to

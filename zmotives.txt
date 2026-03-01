@@ -1,0 +1,49 @@
+What Solsara Does
+Solsara is an autonomous review management agent for local businesses. A business connects their Google account once during onboarding, answers 3 questions about their brand tone, pays monthly, and then never touches it again.
+From that point Solsara runs completely on its own:
+
+Monitors their Google Business Profile 24/7 for new reviews
+When a new review comes in it reads it, understands the context, and writes a response that sounds like the business owner wrote it personally
+Posts the response automatically within 30 minutes of the review appearing
+If the review contains anything risky — a health complaint, legal threat, mention of injury, discrimination accusation — it holds the response and emails the owner immediately so they can handle it manually
+Every Monday sends the owner a summary showing how many reviews were responded to, how their star rating changed, and anything that needs their attention
+
+The owner's entire job is to read a weekly email and occasionally handle flagged reviews. Everything else is handled.
+
+The Gaps It Fills
+Gap 1 — Nobody is doing this for small businesses
+The enterprise tools exist. Birdeye, Podium, Yext — they all have review management features. But they charge $300-500/mo, require onboarding calls with sales reps, have complex dashboards with 50 features the average dentist will never use, and are built for multi-location chains with marketing teams.
+The single location dentist, the owner-operated gym, the independent HVAC company — they have the exact same problem but zero solutions built for them. They're too small for enterprise tools and too busy to do it manually. That's your entire market and nobody is serving them properly.
+Gap 2 — Existing tools require human involvement
+Even the cheaper tools like Grade.us and ReviewTrackers send you notifications and make it easier to respond — but you still have to log in, read the review, write the response, and post it. They reduced the friction but didn't eliminate the job.
+Solsara eliminates the job entirely. There is no logging in. There is no writing. There is no posting. It just happens. That's a fundamentally different product not a cheaper version of what exists.
+Gap 3 — Response speed matters and nobody is solving it
+Google's algorithm actively rewards businesses that respond to reviews quickly and consistently. A business that responds to every review within an hour ranks higher in local search than one that responds sporadically or not at all. Most businesses respond days later if at all — not because they don't care but because they're running a business and reviews aren't top of mind.
+Solsara responds within 30 minutes every single time, consistently, forever. That consistency compounds over time into measurably better local search rankings which means more customers finding them which means real revenue impact. That's the hook that makes this worth $200-400/mo — not "saves you time writing responses" but "improves your Google ranking and brings you more customers automatically."
+Gap 4 — Review generation is completely manual
+Most businesses have no systematic way to ask happy customers for reviews. They rely on customers doing it voluntarily which means they get a disproportionate number of negative reviews because unhappy customers are motivated to complain while happy ones forget to say anything.
+Solsara closes this loop — after a service interaction it automatically texts or emails the customer asking for a review with a direct link. Happy customers who would have forgotten now leave reviews. Your star rating goes up not just because you're responding well but because you're actively generating more positive reviews to balance against the negatives.
+Gap 5 — The liability gap
+This is the one nobody talks about. A business owner responding to a bad review while emotional is a liability. They say something defensive, it escalates, it goes viral for the wrong reasons. Solsara's guardrail system means risky reviews never get auto-responded to — they get flagged and held so the owner can handle them deliberately rather than reactively. That alone has saved businesses from PR disasters they didn't even know they were about to create.
+
+Who Exactly You're Selling To
+The perfect Solsara customer is:
+
+Single location or small chain (1-5 locations)
+Service based — they see customers in person
+Getting at least 5-10 new reviews per month so the automation is visibly working
+Currently not responding to reviews at all or responding inconsistently
+Spending money on Google Ads or SEO already — meaning they understand that online presence affects revenue
+
+Best verticals to start with in order of easiest to sell:
+
+Med spas and aesthetic clinics — high revenue per customer, tech open, not HIPAA regulated
+Dental offices — reviews are critical to them, stable businesses, can afford $300/mo easily
+HVAC and plumbing companies — miss calls and reviews constantly, owner operated, direct ROI conversation
+Gyms and fitness studios — review driven businesses, high churn on members means they need every competitive advantage
+Restaurants — hardest to sell, lowest margins, most opinionated about their brand voice — save these for last
+
+
+The One Line Pitch
+"Solsara responds to every Google review your business gets, automatically, in your voice, within 30 minutes — you never write another review response again."
+That's it. That's what you're building. Everything in the 9 phases serves that one sentence.

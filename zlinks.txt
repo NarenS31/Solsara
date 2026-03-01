@@ -1,0 +1,112 @@
+Phase 1 — Google Cloud Setup
+Search on YouTube:
+
+"Google Cloud Console OAuth consent screen setup 2024"
+"Enable Google API Google Cloud Console tutorial"
+
+Official docs:
+
+console.cloud.google.com/apis/library
+Read this specifically: developers.google.com/identity/protocols/oauth2
+
+What you're trying to understand before coding: what OAuth actually is, what a client ID and secret do, what a redirect URI is. Watch one 10 minute video before touching anything.
+
+Phase 2 — Google OAuth Flow in FastAPI
+Search on YouTube:
+
+"Google OAuth FastAPI tutorial 2024"
+"FastAPI Google login tutorial"
+
+Official docs:
+
+developers.google.com/identity/protocols/oauth2/web-server
+
+What you're trying to understand: the OAuth flow start to finish — user clicks button, gets sent to Google, Google sends back a code, you exchange that code for tokens, you save tokens.
+
+Phase 3 — Review Poller
+Search on YouTube:
+
+"APScheduler FastAPI tutorial"
+"background tasks FastAPI Python"
+
+Official docs:
+
+apscheduler.readthedocs.io
+developers.google.com/my-business/reference/businessinformation/rest
+
+What you're trying to understand: how to run a function on a schedule inside a FastAPI app without it blocking everything else.
+
+Phase 4 — LLM + Guardrails
+Search on YouTube:
+
+"OpenAI API Python tutorial 2024"
+"structured outputs OpenAI JSON response"
+
+Official docs:
+
+platform.openai.com/docs/guides/text-generation
+platform.openai.com/docs/guides/structured-outputs
+
+What you're trying to understand: how to send a prompt and get back structured JSON — specifically a response AND a flag in one call.
+
+Phase 5 — Posting to Google
+No specific video needed — this builds directly on Phase 2 and 3. Once you understand OAuth and the GBP API the posting is just another API call.
+Official docs:
+
+developers.google.com/my-business/reference/rest/v4/accounts.locations.reviews/reply
+
+
+Phase 6 — Stripe
+Search on YouTube:
+
+"Stripe subscriptions Python tutorial 2024"
+"Stripe webhooks FastAPI Python"
+
+Official docs:
+
+stripe.com/docs/billing/subscriptions/overview
+stripe.com/docs/webhooks
+
+What you're trying to understand: how subscriptions work in Stripe, what events get fired, how to handle them safely with idempotency.
+
+Phase 7 — Frontend with Next.js
+Search on YouTube:
+
+"Next.js 14 tutorial for beginners 2024"
+"Next.js Stripe checkout integration"
+"Next.js FastAPI full stack tutorial"
+
+What you're trying to understand: how Next.js pages work, how to call your FastAPI backend from the frontend, how to handle auth state.
+
+Phase 8 — Emails with Resend
+Search on YouTube:
+
+"Resend email Python tutorial"
+
+Official docs:
+
+resend.com/docs
+
+This is the easiest phase. Resend docs are clean enough that you probably won't need a video.
+
+Phase 9 — Deploy to Railway
+Search on YouTube:
+
+"Deploy FastAPI Railway tutorial 2024"
+"Railway deployment Python tutorial"
+
+Official docs:
+
+docs.railway.app
+
+What you're trying to understand: how to connect your GitHub repo to Railway, how to set environment variables in Railway's dashboard, how to point your domain at it.
+
+Honest advice on how to use these
+Don't watch full tutorials start to finish. Watch the first 5-10 minutes to understand the concept, then come back here and we'll write the actual code together tailored to your specific project. Full tutorials will show you generic examples that don't match your structure and you'll spend hours trying to adapt them.
+The pattern for each phase should be:
+
+Watch 10 mins of the relevant video to understand the concept
+Come back here
+We write it together for your specific codebase
+You run it, tell me what breaks
+We fix it
