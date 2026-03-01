@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
-import VantaBackground from "./components/VantaBackground";
 import { cn } from "@/lib/utils";
 
 /* ─── Motion presets ─────────────────────────────────────────── */
@@ -22,7 +21,7 @@ const fadeIn = {
   show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
-const viewportFast = { once: true, amount: 0.2, margin: "0px 0px -80px 0px" };
+/* No scroll-triggered animations — keeps scroll smooth */
 
 /* ─── Nav ────────────────────────────────────────────────────── */
 function Navbar() {
@@ -168,12 +167,7 @@ function DashboardMockup() {
               <div className="text-[9px] font-semibold uppercase tracking-widest text-[#0055ff]/60 mb-1">Growth</div>
               <div className="text-xl font-black text-[#0055ff]">+14.8%</div>
               <div className="mt-2 h-1 w-full rounded-full bg-blue-100 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  whileInView={{ width: "72%" }}
-                  transition={{ duration: 1.4, delay: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
-                  className="h-full rounded-full bg-[#0055ff]"
-                />
+                <div className="h-full w-[72%] rounded-full bg-[#0055ff]" />
               </div>
             </div>
           </div>
@@ -263,13 +257,7 @@ function FeaturesBento() {
   return (
     <div className="mx-auto max-w-5xl px-5 py-28 md:px-10">
       {/* Section header */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={viewportFast}
-        transition={{ duration: 0.35 }}
-        className="mb-12 text-center"
-      >
+      <div className="mb-12 text-center">
         <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70">Platform</span>
         <h2 className="mt-3 text-[32px] md:text-[44px] font-black tracking-[-0.04em] text-white leading-tight">
           One platform. Your entire reputation.
@@ -277,17 +265,13 @@ function FeaturesBento() {
         <p className="mt-3 text-[15px] text-white/70 font-medium max-w-[480px] mx-auto">
           Start with Review Replies. Expand as you grow.
         </p>
-      </motion.div>
+      </div>
 
       {/* Bento grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
 
         {/* Hero card — Review Replies (LIVE) */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewportFast}
-          transition={{ duration: 0.35 }}
+        <div
           className="md:col-span-7 relative overflow-hidden rounded-2xl border border-white/20 bg-[#0044dd] p-8 text-white flex flex-col justify-between min-h-[260px]"
         >
           <div className="pointer-events-none absolute -right-12 -top-12 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
@@ -317,14 +301,10 @@ function FeaturesBento() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Coming soon — first card (larger, right of hero) */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={viewportFast}
-          transition={{ duration: 0.35, delay: 0.05 }}
+        <div
           className="md:col-span-5 relative overflow-hidden rounded-2xl border border-black/[0.06] bg-white p-7 flex flex-col justify-between min-h-[260px]"
         >
           <div>
@@ -338,16 +318,12 @@ function FeaturesBento() {
               {COMING_SOON_MODULES[0].desc}
             </p>
           </div>
-        </motion.div>
+        </div>
 
         {/* Coming soon — remaining 4 in a 2×2 row */}
-        {COMING_SOON_MODULES.slice(1).map((mod, i) => (
-          <motion.div
+        {COMING_SOON_MODULES.slice(1).map((mod) => (
+          <div
             key={mod.name}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewportFast}
-            transition={{ duration: 0.35, delay: 0.05 + i * 0.03 }}
             className="md:col-span-3 relative overflow-hidden rounded-2xl border border-black/[0.06] bg-[#f9fafb] p-6 flex flex-col min-h-[170px]"
           >
             <span className="inline-block rounded-full border border-black/[0.07] bg-white px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-black/25 mb-4">
@@ -355,21 +331,17 @@ function FeaturesBento() {
             </span>
             <h3 className="text-[15px] font-black tracking-tight text-black/60 mb-1.5">{mod.name}</h3>
             <p className="text-[12px] text-black/35 leading-relaxed">{mod.desc}</p>
-          </motion.div>
+          </div>
         ))}
 
       </div>
 
       {/* Footer line */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={viewportFast}
-        transition={{ duration: 0.3 }}
+      <p
         className="mt-10 text-center text-[13px] text-white/60 font-medium"
       >
         New modules ship every quarter. All included in your plan.
-      </motion.p>
+      </p>
     </div>
   );
 }
@@ -412,13 +384,12 @@ export default function Landing() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
-      {/* Sky background */}
-      <VantaBackground />
+      {/* Static gradient — no WebGL for smooth scroll */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-[1]"
         style={{
-          background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(240,245,255,0.22) 40%, rgba(240,245,255,0.70) 70%, #f0f5ff 100%)",
+          background: "linear-gradient(180deg, #e8f0ff 0%, #f0f5ff 50%, #f5f8ff 100%)",
         }}
       />
 
@@ -487,51 +458,41 @@ export default function Landing() {
       </section>
 
       {/* ─ How it works (white) ──────────────────────── */}
-      <section id="how" className="relative z-10 bg-white" style={{ contentVisibility: "auto" }}>
+      <section id="how" className="relative z-10 bg-white">
         <div className="mx-auto max-w-5xl px-5 py-28 md:px-10">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewportFast}
-            transition={{ duration: 0.35 }}
-            className="mb-14 text-center"
-          >
+          <div className="mb-14 text-center">
             <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0055ff]">How it works</span>
             <h2 className="mt-3 text-[32px] md:text-[44px] font-black tracking-[-0.04em] text-black leading-tight">
               Set it once. It runs forever.
             </h2>
-          </motion.div>
+          </div>
 
           <div className="grid gap-6 md:grid-cols-3">
             {[
               { step: "01", title: "Connect Google", desc: "Link your Google Business Profile in 60 seconds. We scan your presence and identify gaps." },
               { step: "02", title: "Set your voice", desc: "Configure your tone and rules once. Solsara learns how you speak and responds as you." },
               { step: "03", title: "Watch it grow", desc: "Reviews handled, search ranking rising, leads captured. You just check the dashboard." },
-            ].map((item, i) => (
-              <motion.div
+            ].map((item) => (
+              <div
                 key={item.step}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={viewportFast}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
                 className="relative rounded-2xl border border-black/[0.06] bg-[#f9fafb] p-7"
               >
                 <span className="text-[11px] font-bold text-[#0055ff] tracking-widest mb-4 block">{item.step}</span>
                 <h3 className="text-[17px] font-bold text-black mb-2 tracking-tight">{item.title}</h3>
                 <p className="text-[13px] text-black/45 leading-relaxed">{item.desc}</p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* ─ Features bento (blue) ────────────────────── */}
-      <section id="product" className="relative z-10 bg-[#0055ff]" style={{ contentVisibility: "auto" }}>
+      <section id="product" className="relative z-10 bg-[#0055ff]">
         <FeaturesBento />
       </section>
 
       {/* ─ Pricing (white) ──────────────────────────── */}
-      <section id="pricing" className="relative z-10 bg-white border-t border-black/[0.05] px-5 py-28 md:px-10" style={{ contentVisibility: "auto" }}>
+      <section id="pricing" className="relative z-10 bg-white border-t border-black/[0.05] px-5 py-28 md:px-10">
           <div className="mx-auto max-w-5xl">
             <div className="mb-14 text-center">
               <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#0055ff]">Pricing</span>
@@ -541,13 +502,9 @@ export default function Landing() {
             </div>
 
             <div className="grid gap-5 md:grid-cols-3">
-              {PLANS.map((plan, i) => (
-                <motion.div
+              {PLANS.map((plan) => (
+                <div
                   key={plan.name}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={viewportFast}
-                  transition={{ duration: 0.35, delay: i * 0.05 }}
                   className={cn(
                     "flex flex-col rounded-2xl border p-7",
                     plan.primary
@@ -574,21 +531,15 @@ export default function Landing() {
                   >
                     {plan.cta}
                   </Link>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
         </section>
 
       {/* ─ CTA / waitlist (blue) ────────────────────── */}
-      <section className="relative z-10 bg-[#0055ff] px-5 py-28 text-center md:px-10" style={{ contentVisibility: "auto" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={viewportFast}
-            transition={{ duration: 0.35 }}
-            className="mx-auto max-w-[600px]"
-          >
+      <section className="relative z-10 bg-[#0055ff] px-5 py-28 text-center md:px-10">
+          <div className="mx-auto max-w-[600px]">
             <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/80">
               Early Access
             </span>
@@ -621,7 +572,7 @@ export default function Landing() {
                 </button>
               </div>
             )}
-          </motion.div>
+          </div>
       </section>
 
       {/* ─ Footer (white) ────────────────────────────── */}
