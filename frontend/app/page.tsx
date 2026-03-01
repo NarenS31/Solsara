@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import CloudBackground from "./components/CloudBackground";
+import VantaBackground from "./components/VantaBackground";
 
 /* ─── Motion presets ─────────────────────────────────────────── */
 const fadeUp = {
@@ -385,8 +385,8 @@ export default function Landing() {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
-      {/* CSS-only clouds — smooth scroll, no WebGL */}
-      <CloudBackground />
+      {/* Vanta clouds — pauses on scroll for smooth UX */}
+      <VantaBackground />
 
       <Navbar />
 
