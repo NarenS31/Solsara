@@ -268,7 +268,7 @@ export default function Dashboard() {
         </div>
 
         {/* Flagged reviews */}
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {held > 0 && (
             <motion.section
               initial={{ opacity: 0, y: 12 }}
@@ -287,7 +287,7 @@ export default function Dashboard() {
                 {reviews
                   .filter((r) => r.status === "held")
                   .map((review) => (
-                    <motion.div key={review.id} layout>
+                    <motion.div key={review.id}>
                       <div className="rounded-xl border border-amber-100 bg-white shadow-[0_1px_8px_rgba(0,0,0,0.04)] overflow-hidden">
                         {/* Orange top accent */}
                         <div className="h-0.5 w-full bg-gradient-to-r from-amber-400 to-amber-200" />
