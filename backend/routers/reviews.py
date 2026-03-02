@@ -39,7 +39,8 @@ def _fmt_relative(iso_value: Optional[str]) -> str:
 
 @router.get("")
 def list_reviews(business_id: str, limit: int = 50, offset: int = 0):
-    logger.info("list_reviews_start", extra={"business_id": business_id, "limit": limit, "offset": offset})
+    logger.info("list_reviews_start", extra={
+                "business_id": business_id, "limit": limit, "offset": offset})
 
     if not business_id:
         raise HTTPException(status_code=400, detail="business_id is required")
@@ -92,9 +93,11 @@ def list_reviews(business_id: str, limit: int = 50, offset: int = 0):
 
     posted = sum(1 for r in normalized if r["status"] == "posted")
     held = sum(1 for r in normalized if r["status"] == "held")
-    avg = round((sum(r["rating"] for r in normalized) / len(normalized)), 1) if normalized else 0.0
+    avg = round((sum(r["rating"] for r in normalized) /
+                len(normalized)), 1) if normalized else 0.0
 
-    logger.info("list_reviews_done", extra={"business_id": business_id, "count": len(normalized), "held": held})
+    logger.info("list_reviews_done", extra={
+                "business_id": business_id, "count": len(normalized), "held": held})
 
     return {
         "reviews": normalized,
@@ -113,9 +116,11 @@ def seed_reviews_for_business(business_id: str):
     logger.info("seed_reviews_start", extra={"business_id": business_id})
 
     # Check if business exists, if not create it for demo purposes
-    business = supabase.table("businesses").select("id").eq("id", business_id).execute()
+    business = supabase.table("businesses").select(
+        "id").eq("id", business_id).execute()
     if not business.data:
-        logger.info("seed_business_not_found_creating_demo", extra={"business_id": business_id})
+        logger.info("seed_business_not_found_creating_demo",
+                    extra={"business_id": business_id})
         try:
             supabase.table("businesses").insert({
                 "id": business_id,
@@ -123,8 +128,10 @@ def seed_reviews_for_business(business_id: str):
                 "google_business_id": business_id,
             }).execute()
         except Exception as e:
-            logger.error("seed_business_create_failed", extra={"error": str(e)})
-            raise HTTPException(status_code=500, detail="Failed to create demo business")
+            logger.error("seed_business_create_failed",
+                         extra={"error": str(e)})
+            raise HTTPException(
+                status_code=500, detail="Failed to create demo business")
 
     sample_reviews = [
         {
@@ -149,7 +156,8 @@ def seed_reviews_for_business(business_id: str):
 
     inserted = 0
     for row in sample_reviews:
-        exists = supabase.table("reviews").select("id").eq("google_review_id", row["google_review_id"]).execute()
+        exists = supabase.table("reviews").select("id").eq(
+            "google_review_id", row["google_review_id"]).execute()
         if exists.data:
             continue
 
@@ -190,7 +198,8 @@ def seed_reviews_for_business(business_id: str):
 
         inserted += 1
 
-    logger.info("seed_reviews_done", extra={"business_id": business_id, "inserted": inserted})
+    logger.info("seed_reviews_done", extra={
+                "business_id": business_id, "inserted": inserted})
     return {"ok": True, "inserted": inserted, "business_id": business_id}
 
 
@@ -199,7 +208,8 @@ def reply_to_review(review_id: str, payload: ReplyRequest):
     if not payload.response.strip():
         raise HTTPException(status_code=400, detail="response is required")
 
-    queue = supabase.table("response_queue").select("id").eq("review_id", review_id).eq("business_id", payload.business_id).execute()
+    queue = supabase.table("response_queue").select("id").eq(
+        "review_id", review_id).eq("business_id", payload.business_id).execute()
 
     update_data = {
         "generated_response": payload.response,
@@ -210,7 +220,8 @@ def reply_to_review(review_id: str, payload: ReplyRequest):
     }
 
     if queue.data:
-        supabase.table("response_queue").update(update_data).eq("id", queue.data[0]["id"]).execute()
+        supabase.table("response_queue").update(
+            update_data).eq("id", queue.data[0]["id"]).execute()
     else:
         supabase.table("response_queue").insert({
             **update_data,
@@ -219,7 +230,9 @@ def reply_to_review(review_id: str, payload: ReplyRequest):
             "confidence_score": 1.0,
         }).execute()
 
-    supabase.table("reviews").update({"responded": True}).eq("id", review_id).execute()
+    supabase.table("reviews").update(
+        {"responded": True}).eq("id", review_id).execute()
 
-    logger.info("reply_posted", extra={"review_id": review_id, "business_id": payload.business_id})
+    logger.info("reply_posted", extra={
+                "review_id": review_id, "business_id": payload.business_id})
     return {"ok": True, "review_id": review_id}

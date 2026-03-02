@@ -173,7 +173,7 @@ def google_callback(code: str, request: Request, state: str = None):
         business_id = result.data[0]["id"]
         redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}"
         logger.info("google_callback_new_business",
-                extra={"business_id": business_id})
+                    extra={"business_id": business_id})
         resp = RedirectResponse(url=redirect_url)
         resp.delete_cookie("oauth_code_verifier")
         return resp
