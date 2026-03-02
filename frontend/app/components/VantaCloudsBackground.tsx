@@ -25,6 +25,7 @@ export default function VantaCloudsBackground() {
           gyroControls: false,
           minHeight: 200,
           minWidth: 200,
+          skyColor: 0x87CEEB,
         }) as { destroy: () => void };
       }
     };
