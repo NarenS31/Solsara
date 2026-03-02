@@ -112,9 +112,19 @@ def list_reviews(business_id: str, limit: int = 50, offset: int = 0):
 def seed_reviews_for_business(business_id: str):
     logger.info("seed_reviews_start", extra={"business_id": business_id})
 
+    # Check if business exists, if not create it for demo purposes
     business = supabase.table("businesses").select("id").eq("id", business_id).execute()
     if not business.data:
-        raise HTTPException(status_code=404, detail="Business not found")
+        logger.info("seed_business_not_found_creating_demo", extra={"business_id": business_id})
+        try:
+            supabase.table("businesses").insert({
+                "id": business_id,
+                "name": f"Demo Business {business_id[:8]}",
+                "google_business_id": business_id,
+            }).execute()
+        except Exception as e:
+            logger.error("seed_business_create_failed", extra={"error": str(e)})
+            raise HTTPException(status_code=500, detail="Failed to create demo business")
 
     sample_reviews = [
         {
