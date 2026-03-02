@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -41,10 +42,9 @@ const inputCls =
 
 /* ─── Step indicators ────────────────────────────────────────── */
 const STEPS = [
-  { n: 1, label: "Account" },
-  { n: 2, label: "Google" },
-  { n: 3, label: "Voice" },
-  { n: 4, label: "Payment" },
+  { n: 1, label: "Google" },
+  { n: 2, label: "Voice" },
+  { n: 3, label: "Payment" },
 ];
 
 function StepBar({ current }: { current: number }) {
@@ -93,103 +93,25 @@ function StepBar({ current }: { current: number }) {
   );
 }
 
-/* ─── Step 1: Account ────────────────────────────────────────── */
-function StepAccount({
-  data,
-  onChange,
-  onNext,
-}: {
-  data: FormData;
-  onChange: (k: keyof FormData, v: string) => void;
-  onNext: () => void;
-}) {
-  const valid = data.businessName.trim() && data.email.includes("@") && data.password.length >= 8;
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Create your account</h2>
-        <p className="mt-1.5 text-[14px] text-black/45 font-medium">Get started in under 3 minutes. No card required.</p>
-      </div>
-
-      <div className="space-y-3">
-        <div>
-          <label className="mb-1.5 block text-[12px] font-semibold text-black/50">Business name</label>
-          <input
-            className={inputCls}
-            placeholder="e.g. Joe's Barbershop"
-            value={data.businessName}
-            onChange={(e) => onChange("businessName", e.target.value)}
-            autoFocus
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-[12px] font-semibold text-black/50">Email address</label>
-          <input
-            type="email"
-            className={inputCls}
-            placeholder="you@yourbusiness.com"
-            value={data.email}
-            onChange={(e) => onChange("email", e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-[12px] font-semibold text-black/50">Password</label>
-          <input
-            type="password"
-            className={inputCls}
-            placeholder="Min. 8 characters"
-            value={data.password}
-            onChange={(e) => onChange("password", e.target.value)}
-          />
-          {data.password.length > 0 && data.password.length < 8 && (
-            <p className="mt-1.5 text-[11px] text-red-400 font-medium">At least 8 characters required</p>
-          )}
-        </div>
-      </div>
-
-      <button
-        onClick={onNext}
-        disabled={!valid}
-        className={cn(
-          "w-full rounded-xl py-3.5 text-[14px] font-bold transition-all duration-200",
-          valid
-            ? "bg-black text-white hover:bg-black/85 hover:scale-[1.01] active:scale-[0.99]"
-            : "bg-black/[0.06] text-black/25 cursor-not-allowed"
-        )}
-      >
-        Continue →
-      </button>
-
-      <p className="text-center text-[12px] text-black/30">
-        Already have an account?{" "}
-        <Link href="/dashboard" className="text-[#0055ff] font-semibold no-underline hover:underline">
-          Sign in
-        </Link>
-      </p>
-    </div>
-  );
-}
-
-/* ─── Step 2: Google OAuth ───────────────────────────────────── */
+/* ─── Step 1: Google OAuth ───────────────────────────────────── */
 function StepGoogle({
   data,
   onChange,
   onNext,
+  businessId,
 }: {
   data: FormData;
   onChange: (k: keyof FormData, v: string | boolean) => void;
   onNext: () => void;
+  businessId?: string | null;
 }) {
   const [connecting, setConnecting] = useState(false);
+  const alreadyConnected = !!businessId || data.googleConnected;
 
   function handleConnect() {
+    // Real OAuth: redirect to backend
+    window.location.href = "/api/auth/google";
     setConnecting(true);
-    setTimeout(() => {
-      onChange("googleConnected", true);
-      onChange("googleBusiness", data.businessName || "Your Business");
-      setConnecting(false);
-    }, 1800);
   }
 
   return (
@@ -225,7 +147,7 @@ function StepGoogle({
 
       {/* OAuth button or success */}
       <AnimatePresence mode="wait">
-        {data.googleConnected ? (
+        {alreadyConnected ? (
           <motion.div
             key="connected"
             initial={{ opacity: 0, scale: 0.97 }}
@@ -239,15 +161,14 @@ function StepGoogle({
             </div>
             <div>
               <div className="text-[13px] font-bold text-emerald-700">Google connected</div>
-              <div className="text-[12px] text-emerald-600/70">{data.googleBusiness}</div>
+              <div className="text-[12px] text-emerald-600/70">{data.googleBusiness || "Connected"}</div>
             </div>
           </motion.div>
         ) : (
-          <motion.button
+          <motion.a
             key="connect"
-            onClick={handleConnect}
-            disabled={connecting}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-black/[0.09] bg-white py-3.5 text-[14px] font-semibold text-black shadow-[0_1px_8px_rgba(0,0,0,0.06)] hover:border-black/20 hover:shadow-[0_2px_16px_rgba(0,0,0,0.1)] transition-all duration-200 disabled:opacity-60"
+            href="/api/auth/google"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-black/[0.09] bg-white py-3.5 text-[14px] font-semibold text-black shadow-[0_1px_8px_rgba(0,0,0,0.06)] hover:border-black/20 hover:shadow-[0_2px_16px_rgba(0,0,0,0.1)] transition-all duration-200 no-underline"
           >
             {connecting ? (
               <>
@@ -269,27 +190,36 @@ function StepGoogle({
                 Continue with Google
               </>
             )}
-          </motion.button>
+          </motion.a>
         )}
       </AnimatePresence>
 
       <button
         onClick={onNext}
-        disabled={!data.googleConnected}
+        disabled={!alreadyConnected}
         className={cn(
           "w-full rounded-xl py-3.5 text-[14px] font-bold transition-all duration-200",
-          data.googleConnected
+          alreadyConnected
             ? "bg-black text-white hover:bg-black/85 hover:scale-[1.01] active:scale-[0.99]"
             : "bg-black/[0.06] text-black/25 cursor-not-allowed"
         )}
       >
         Continue →
       </button>
+
+      {!alreadyConnected && (
+        <p className="text-center text-[12px] text-black/30">
+          Already have an account?{" "}
+          <Link href="/login" className="text-[#0055ff] font-semibold no-underline hover:underline">
+            Log in with Google
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
 
-/* ─── Step 3: Tone setup ─────────────────────────────────────── */
+/* ─── Step 2: Tone setup ─────────────────────────────────────── */
 
 const DEFAULT_RULES = [
   { id: "r1", text: "Sound human and genuine, not like a template", locked: true },
@@ -513,8 +443,8 @@ function StepVoice({
   );
 }
 
-/* ─── Step 4: Payment ────────────────────────────────────────── */
-function StepPayment({ data, onDone }: { data: FormData; onDone: () => void }) {
+/* ─── Step 3: Payment ────────────────────────────────────────── */
+function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () => void; businessId?: string | null }) {
   const [loading, setLoading] = useState(false);
 
   function handleCheckout() {
@@ -540,7 +470,7 @@ function StepPayment({ data, onDone }: { data: FormData; onDone: () => void }) {
           <div>
             <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#0055ff] mb-1">OS Entry</div>
             <div className="text-[32px] font-black tracking-[-0.04em] text-black leading-none">
-              $299
+              $149
               <span className="text-[15px] font-medium text-black/35">/mo</span>
             </div>
           </div>
@@ -574,7 +504,7 @@ function StepPayment({ data, onDone }: { data: FormData; onDone: () => void }) {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-[13px]">
             <span className="text-black/40 font-medium">Business</span>
-            <span className="font-semibold text-black">{data.businessName || "—"}</span>
+            <span className="font-semibold text-black">{data.businessName || (businessId ? "Connected" : "—")}</span>
           </div>
           <div className="flex items-center justify-between text-[13px]">
             <span className="text-black/40 font-medium">Google</span>
@@ -605,7 +535,7 @@ function StepPayment({ data, onDone }: { data: FormData; onDone: () => void }) {
             Redirecting to Stripe...
           </span>
         ) : (
-          "Start free trial → Pay $299/mo after 14 days"
+          "Start free trial → Pay $149/mo after 14 days"
         )}
       </button>
 
@@ -673,6 +603,9 @@ function Done({ name }: { name: string }) {
 
 /* ─── Main onboarding page ───────────────────────────────────── */
 export default function Onboarding() {
+  const searchParams = useSearchParams();
+  const businessIdFromUrl = searchParams.get("business_id");
+
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
   const [done, setDone] = useState(false);
@@ -680,8 +613,8 @@ export default function Onboarding() {
     businessName: "",
     email: "",
     password: "",
-    googleConnected: false,
-    googleBusiness: "",
+    googleConnected: !!businessIdFromUrl,
+    googleBusiness: businessIdFromUrl ? "Connected" : "",
     voice: "",
     neverSay: "",
     exampleResponse: "",
@@ -690,6 +623,14 @@ export default function Onboarding() {
   function update(k: keyof FormData, v: string | boolean) {
     setForm((prev) => ({ ...prev, [k]: v }));
   }
+
+  // When landing with business_id from OAuth callback, skip to Voice step
+  useEffect(() => {
+    if (businessIdFromUrl) {
+      setStep(2);
+      setForm((prev) => ({ ...prev, googleConnected: true, googleBusiness: "Connected" }));
+    }
+  }, [businessIdFromUrl]);
 
   function next() {
     setDir(1);
@@ -778,13 +719,11 @@ export default function Onboarding() {
               {done ? (
                 <Done name={form.businessName} />
               ) : step === 1 ? (
-                <StepAccount data={form} onChange={update} onNext={next} />
+                <StepGoogle data={form} onChange={update} onNext={next} businessId={businessIdFromUrl} />
               ) : step === 2 ? (
-                <StepGoogle data={form} onChange={update} onNext={next} />
-              ) : step === 3 ? (
                 <StepVoice data={form} onChange={update} onNext={next} />
               ) : (
-                <StepPayment data={form} onDone={() => setDone(true)} />
+                <StepPayment data={form} onDone={() => setDone(true)} businessId={businessIdFromUrl} />
               )}
             </motion.div>
           </AnimatePresence>

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 from ..config import settings
 from ..db import supabase
 import os
@@ -12,7 +14,12 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # the permission we're requesting from Google
 # business.manage lets us read reviews and post responses
-SCOPES = ["https://www.googleapis.com/auth/business.manage"]
+# openid + email give us the user's Google ID (sub) for login/signup
+SCOPES = [
+    "https://www.googleapis.com/auth/business.manage",
+    "openid",
+    "email",
+]
 
 
 def create_flow():
@@ -53,30 +60,68 @@ def google_login():
     return RedirectResponse(authorization_url)
 
 
+def _get_google_user_id(credentials) -> str | None:
+    """Extract Google user ID (sub) from id_token for login/signup lookup."""
+    if not getattr(credentials, "id_token", None):
+        return None
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            credentials.id_token,
+            google_requests.Request(),
+            settings.google_client_id,
+        )
+        return idinfo.get("sub")
+    except Exception:
+        return None
+
+
 @router.get("/callback")
 def google_callback(code: str, state: str = None):
     try:
         flow = create_flow()
         flow.fetch_token(code=code)
         credentials = flow.credentials
-        print("Credentials:", credentials.token, credentials.refresh_token)
+        google_user_id = _get_google_user_id(credentials)
 
-        result = supabase.table("businesses").insert({
+        # Returning user: find existing business by google_user_id
+        if google_user_id:
+            existing = supabase.table("businesses").select("id, refresh_token").eq(
+                "google_user_id", google_user_id
+            ).execute()
+            if existing.data and len(existing.data) > 0:
+                business_id = existing.data[0]["id"]
+                # Update tokens (keep existing refresh_token if Google didn't return a new one)
+                update_data = {
+                    "access_token": credentials.token,
+                    "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+                }
+                if credentials.refresh_token:
+                    update_data["refresh_token"] = credentials.refresh_token
+                supabase.table("businesses").update(update_data).eq("id", business_id).execute()
+                redirect_url = f"{settings.frontend_url}/dashboard?business_id={business_id}"
+                return RedirectResponse(url=redirect_url)
+
+        # New user: create business with google_user_id
+        insert_data = {
             "access_token": credentials.token,
             "refresh_token": credentials.refresh_token,
             "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
-            "is_active": False
-        }).execute()
+            "is_active": False,
+        }
+        if google_user_id:
+            insert_data["google_user_id"] = google_user_id
 
-        print("Supabase result:", result.data)
+        result = supabase.table("businesses").insert(insert_data).execute()
 
         if not result.data:
-            raise HTTPException(
-                status_code=500, detail="Failed to save credentials")
+            raise HTTPException(status_code=500, detail="Failed to save credentials")
 
         business_id = result.data[0]["id"]
-        return {"message": "Google connected", "business_id": business_id}
+        redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}"
+        return RedirectResponse(url=redirect_url)
 
+    except HTTPException:
+        raise
     except Exception as e:
         print("ERROR:", e)
         raise HTTPException(status_code=500, detail=str(e))

@@ -25,10 +25,78 @@ const fadeIn = {
 /* No scroll-triggered animations — keeps scroll smooth */
 
 /* ─── Nav ────────────────────────────────────────────────────── */
+const NAV_LINKS = [
+  { href: "#product", label: "Product" },
+  { href: "#pricing", label: "Pricing" },
+  { href: "#how", label: "How it works" },
+  { href: "/demo", label: "Live demo", demo: true },
+];
+
+function NavBrandAndLinks() {
+  return (
+    <div className="flex items-center gap-3 sm:gap-5 md:gap-6 shrink-0">
+      <Link href="/" className="relative flex items-center no-underline shrink-0">
+        <span className="text-[15px] font-black tracking-tight" style={{ color: "rgba(0,0,0,0.85)", textShadow: "0 1px 2px rgba(255,255,255,0.6)" }}>
+          Sol<span className="text-[#0055ff]">sara</span>
+        </span>
+      </Link>
+      {NAV_LINKS.map((l) =>
+        l.demo ? (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="relative flex items-center gap-1.5 text-[13px] font-semibold text-[#0055ff] no-underline hover:text-[#0044dd] transition-colors"
+          >
+            <span className="flex h-1.5 w-1.5 rounded-full bg-[#0055ff] animate-pulse" />
+            {l.label}
+          </Link>
+        ) : (
+<Link
+              key={l.href}
+              href={l.href}
+              className="text-[13px] font-medium text-black/50 no-underline transition-colors hover:text-black"
+            >
+              {l.label}
+            </Link>
+        )
+      )}
+    </div>
+  );
+}
+
+function NavAuthAndCta() {
+  return (
+    <div className="flex items-center gap-6 sm:gap-8 shrink-0">
+<Link
+              href="/login"
+              className="text-[13px] font-medium text-black/50 no-underline transition-colors hover:text-black py-1"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/api/auth/google"
+              className="text-[13px] font-medium text-black/50 no-underline transition-colors hover:text-black py-1"
+            >
+              Sign up
+            </Link>
+            <Link
+              href="/api/auth/google"
+        className="relative h-9 px-5 rounded-full text-[12px] font-semibold flex items-center shrink-0 no-underline transition-all hover:scale-[1.04] active:scale-[0.97]"
+        style={{
+          background: "linear-gradient(160deg, rgba(10,10,10,0.88) 0%, rgba(30,30,30,0.96) 100%)",
+          color: "#fff",
+          boxShadow: "0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 16px rgba(0,0,0,0.25)",
+        }}
+      >
+        Start free trial
+      </Link>
+    </div>
+  );
+}
+
 function Navbar() {
   return (
     <header className="fixed top-0 inset-x-0 z-50 flex justify-center pt-5 px-4">
-      {/* Gradient border wrapper — gives the 3D edge refraction */}
       <div
         className="rounded-full p-px"
         style={{
@@ -38,14 +106,13 @@ function Navbar() {
         }}
       >
         <nav
-          className="relative flex w-full items-center justify-between gap-8 overflow-hidden rounded-full px-5 py-2.5"
+          className="relative flex w-full items-center justify-between gap-4 sm:gap-6 overflow-x-auto overflow-y-hidden rounded-full px-4 sm:px-6 py-3"
           style={{
             background: "rgba(255,255,255,0.12)",
             backdropFilter: "blur(40px) saturate(180%)",
             WebkitBackdropFilter: "blur(40px) saturate(180%)",
           }}
         >
-          {/* Top specular highlight — the "lens flare" stripe */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-full"
@@ -53,67 +120,8 @@ function Navbar() {
               background: "linear-gradient(to bottom, rgba(255,255,255,0.55), transparent)",
             }}
           />
-
-          {/* Logo */}
-          <Link href="/" className="relative flex items-center no-underline shrink-0">
-            <span className="text-[15px] font-black tracking-tight" style={{ color: "rgba(0,0,0,0.85)", textShadow: "0 1px 2px rgba(255,255,255,0.6)" }}>
-              Sol<span className="text-[#0055ff]">sara</span>
-            </span>
-          </Link>
-
-          {/* Links */}
-          <div className="relative hidden md:flex items-center gap-7">
-            {[
-              { href: "#product", label: "Product" },
-              { href: "#pricing", label: "Pricing" },
-              { href: "#how", label: "How it works" },
-            ].map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className="text-[13px] font-medium no-underline transition-colors"
-                style={{ color: "rgba(0,0,0,0.52)" }}
-              >
-                {l.label}
-              </Link>
-            ))}
-            <Link
-              href="/demo"
-              className="relative flex items-center gap-1.5 text-[13px] font-semibold text-[#0055ff] no-underline hover:text-[#0044dd] transition-colors"
-            >
-              <span className="flex h-1.5 w-1.5 rounded-full bg-[#0055ff] animate-pulse" />
-              Live demo
-            </Link>
-          </div>
-
-          {/* Auth + CTA */}
-          <div className="flex items-center gap-2 shrink-0">
-            <Link
-              href="/dashboard"
-              className="hidden sm:block text-[12px] font-medium no-underline transition-colors"
-              style={{ color: "rgba(0,0,0,0.52)" }}
-            >
-              Log in
-            </Link>
-            <Link
-              href="/onboarding"
-              className="hidden sm:block text-[12px] font-medium no-underline transition-colors"
-              style={{ color: "rgba(0,0,0,0.52)" }}
-            >
-              Sign up
-            </Link>
-            <Link
-              href="/onboarding"
-              className="relative h-9 px-5 rounded-full text-[12px] font-semibold flex items-center shrink-0 no-underline transition-all hover:scale-[1.04] active:scale-[0.97]"
-              style={{
-                background: "linear-gradient(160deg, rgba(10,10,10,0.88) 0%, rgba(30,30,30,0.96) 100%)",
-                color: "#fff",
-                boxShadow: "0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 16px rgba(0,0,0,0.25)",
-              }}
-            >
-              Start free trial
-            </Link>
-          </div>
+          <NavBrandAndLinks />
+          <NavAuthAndCta />
         </nav>
       </div>
     </header>
@@ -373,7 +381,7 @@ const PLANS = [
     desc: "Review Automation + Reputation Dashboard. One location.",
     cta: "Start free trial",
     primary: true,
-    href: "/onboarding",
+    href: "/api/auth/google",
   },
   {
     name: "OS Growth",
@@ -445,8 +453,8 @@ export default function Landing() {
           {/* CTAs */}
           <motion.div variants={fadeUp} className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/onboarding"
-              className="inline-flex h-12 items-center rounded-full bg-black px-7 text-[13px] font-semibold text-white no-underline transition-all hover:bg-black/85 hover:scale-[1.02] active:scale-[0.98]"
+              href="/api/auth/google"
+              className="inline-flex h-12 items-center rounded-full bg-black px-7 text-[13px] font-semibold text-white no-underline transition-all hover:bg-black/85 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
             >
               Start your 14-day free trial →
             </Link>
@@ -581,7 +589,7 @@ export default function Landing() {
                   placeholder="business@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-14 w-full rounded-full border border-white/30 bg-white/10 px-6 pr-36 text-[14px] font-medium text-white placeholder:text-white/50 outline-none focus:border-white/50 focus:ring-2 focus:ring-white/20 transition-all"
+                  className="h-14 w-full rounded-full border border-white/30 bg-white/10 px-6 pr-36 text-[14px] font-medium text-white placeholder:text-white/50 outline-none focus:border-white/50 focus:ring-2 focus:ring-white/20 focus-visible:ring-2 focus-visible:ring-white/20 transition-all"
                 />
                 <button
                   onClick={() => setSubmitted(true)}
@@ -608,7 +616,7 @@ export default function Landing() {
                 { label: "Terms", href: "/terms" },
                 { label: "Privacy", href: "/privacy" },
               ].map((l) => (
-                <Link key={l.label} href={l.href} className="text-[11px] font-medium text-black/35 no-underline hover:text-black transition-colors uppercase tracking-widest">
+                <Link key={l.label} href={l.href} className="text-[11px] font-medium text-black/35 no-underline hover:text-black hover:underline transition-colors uppercase tracking-widest">
                   {l.label}
                 </Link>
               ))}

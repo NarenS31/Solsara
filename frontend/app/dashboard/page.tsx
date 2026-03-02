@@ -139,6 +139,22 @@ export default function Dashboard() {
   return (
     <div className="flex min-h-screen bg-[#f7f9fc]">
 
+      {/* ─ Mobile header ───────────────────────────────── */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-white border-b border-black/[0.06]">
+        <Link href="/" className="no-underline">
+          <span className="text-[15px] font-black tracking-tight text-black">
+            Sol<span className="text-[#0055ff]">sara</span>
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+          </span>
+          <span className="text-[11px] font-semibold text-emerald-600">Live</span>
+        </div>
+      </header>
+
       {/* ─ Sidebar ──────────────────────────────────── */}
       <aside className="hidden md:flex md:fixed md:inset-y-0 md:left-0 md:w-60 flex-col bg-white border-r border-black/[0.06]">
 
@@ -206,7 +222,7 @@ export default function Dashboard() {
       </aside>
 
       {/* ─ Main ─────────────────────────────────────── */}
-      <main className="flex-1 md:ml-60 px-6 pt-8 pb-16 md:px-10">
+      <main className="flex-1 md:ml-60 px-6 pt-16 md:pt-8 pb-16 md:px-10">
 
         {/* Header */}
         <div className="mb-8 flex flex-wrap items-start justify-between gap-4">

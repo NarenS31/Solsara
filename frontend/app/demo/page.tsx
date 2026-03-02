@@ -266,7 +266,7 @@ export default function Demo() {
                 Sol<span className="text-[#0055ff]">sara</span>
               </span>
             </Link>
-            <div className="hidden items-center gap-2 rounded-full bg-[#f0f5ff] px-3 py-1 sm:flex">
+            <div className="flex items-center gap-2 rounded-full bg-[#f0f5ff] px-3 py-1">
               <span className="h-1.5 w-1.5 rounded-full bg-[#0055ff] animate-pulse" />
               <span className="text-[11px] font-semibold text-[#0055ff]">Interactive Demo</span>
             </div>
@@ -282,7 +282,7 @@ export default function Demo() {
               <span className="sm:hidden">Back</span>
             </Link>
             <Link
-              href="/onboarding"
+              href="/api/auth/google"
               className="h-9 rounded-full bg-black px-5 text-[12px] font-semibold text-white no-underline flex items-center hover:bg-black/85 transition-colors"
             >
               Start free trial →
@@ -311,7 +311,7 @@ export default function Demo() {
                   <span className="rounded-full bg-[#f0f5ff] px-2.5 py-0.5 text-[10px] font-bold text-[#0055ff] uppercase tracking-wider">Demo</span>
                 </div>
                 <div className="mt-0.5 flex items-center gap-2 text-[12px] text-black/40 font-medium">
-                  <Stars rating={5} />
+                  <Stars rating={BUSINESS.rating} />
                   <span>{BUSINESS.rating} · {stats.total} reviews · {BUSINESS.location}</span>
                 </div>
               </div>
@@ -535,7 +535,7 @@ export default function Demo() {
                 Put your reviews on autopilot. Setup takes 3 minutes.
               </p>
               <Link
-                href="/onboarding"
+                href="/api/auth/google"
                 className="block w-full rounded-lg bg-white py-3 text-center text-[13px] font-bold text-[#0055ff] no-underline hover:bg-white/95 transition-colors shadow-sm"
               >
                 Start free trial →
