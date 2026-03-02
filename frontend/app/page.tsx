@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 import VantaBackground from "./components/VantaBackground";
 
@@ -407,8 +407,7 @@ const PLANS = [
 
 /* ─── Landing ────────────────────────────────────────────────── */
 export default function Landing() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
@@ -578,27 +577,13 @@ export default function Landing() {
               Setup takes 3 minutes. Your first auto-reply goes live today.
             </p>
 
-            {submitted ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 border border-white/30 px-5 py-3 text-[14px] font-semibold text-white">
-                ✓ You're on the list — we'll be in touch.
-              </div>
-            ) : (
-              <div className="relative mx-auto max-w-[460px]">
-                <input
-                  type="email"
-                  placeholder="business@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-14 w-full rounded-full border border-white/30 bg-white/10 px-6 pr-36 text-[14px] font-medium text-white placeholder:text-white/50 outline-none focus:border-white/50 focus:ring-2 focus:ring-white/20 focus-visible:ring-2 focus-visible:ring-white/20 transition-all"
-                />
-                <button
-                  onClick={() => setSubmitted(true)}
-                  className="absolute right-1.5 top-1.5 bottom-1.5 rounded-full bg-white px-5 text-[12px] font-semibold text-[#0055ff] hover:bg-white/90 transition-colors"
-                >
-                  Join Phase 01
-                </button>
-              </div>
-            )}
+            <div className="mx-auto max-w-[460px]">
+              <button
+                className="h-14 w-full rounded-full bg-white text-[#0055ff] font-semibold text-[14px] hover:bg-white/90 transition-colors"
+              >
+                Join Now
+              </button>
+            </div>
           </div>
       </section>
 
