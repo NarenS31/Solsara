@@ -5,7 +5,10 @@ import { NextResponse } from "next/server";
  * Backend handles: Google login → callback → redirect to /dashboard (returning) or /onboarding (new).
  */
 export async function GET() {
-  const backendUrl = process.env.BACKEND_URL || "http://localhost:8001";
+  const backendUrl = process.env.BACKEND_URL;
+  if (!backendUrl) {
+    throw new Error("BACKEND_URL environment variable is not set");
+  }
   const authUrl = `${backendUrl}/auth/google`;
   return NextResponse.redirect(authUrl);
 }
