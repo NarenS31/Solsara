@@ -42,7 +42,7 @@ export default function VantaBackground() {
         minHeight: 200,
         minWidth: 200,
         backgroundColor: 0xf5f8ff,
-        skyColor: 0x87CEEB,
+        skyColor: 0xCDEBF7,
         cloudColor: 0xffffff,
         cloudShadowColor: 0x82a9db,
         sunColor: 0xfffcf5,
