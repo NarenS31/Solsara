@@ -22,7 +22,7 @@ if settings.google_redirect_uri.startswith("http://"):
 SCOPES = [
     "https://www.googleapis.com/auth/business.manage",
     "openid",
-    "email",
+    "https://www.googleapis.com/auth/userinfo.email",
 ]
 
 
