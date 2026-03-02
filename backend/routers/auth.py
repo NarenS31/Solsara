@@ -95,10 +95,15 @@ def google_callback(code: str, state: str = None):
 
         # Returning user: find existing business by google_user_id
         if google_user_id:
-            existing = supabase.table("businesses").select("id, refresh_token").eq(
-                "google_user_id", google_user_id
-            ).execute()
-            if existing.data and len(existing.data) > 0:
+            try:
+                existing = supabase.table("businesses").select("id, refresh_token").eq(
+                    "google_user_id", google_user_id
+                ).execute()
+            except Exception:
+                # Column might not exist yet in some environments; continue with create flow.
+                logger.warning("google_callback_lookup_google_user_id_failed")
+                existing = None
+            if existing and existing.data and len(existing.data) > 0:
                 business_id = existing.data[0]["id"]
                 # Update tokens (keep existing refresh_token if Google didn't return a new one)
                 update_data = {
@@ -122,7 +127,19 @@ def google_callback(code: str, state: str = None):
         if google_user_id:
             insert_data["google_user_id"] = google_user_id
 
-        result = supabase.table("businesses").insert(insert_data).execute()
+        try:
+            result = supabase.table("businesses").insert(insert_data).execute()
+        except Exception:
+            # Fallback for older schema (missing google_user_id or required name field)
+            logger.warning("google_callback_insert_with_google_user_id_failed_retrying")
+            fallback_insert = {
+                "access_token": credentials.token,
+                "refresh_token": credentials.refresh_token,
+                "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+                "is_active": False,
+                "name": "New Business",
+            }
+            result = supabase.table("businesses").insert(fallback_insert).execute()
 
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to save credentials")
@@ -136,7 +153,7 @@ def google_callback(code: str, state: str = None):
         raise
     except Exception as e:
         logger.exception("google_callback_failed")
-        safe_redirect = f"{settings.frontend_url}/login?error=oauth_failed"
+        safe_redirect = f"{settings.frontend_url}/login?error=oauth_failed&reason={str(type(e).__name__)}"
         return RedirectResponse(url=safe_redirect)
 
 

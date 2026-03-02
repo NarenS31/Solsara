@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const oauthError = searchParams.get("error");
+  const oauthReason = searchParams.get("reason");
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#f7f9fc] px-5">
       <div className="w-full max-w-[400px]">
@@ -17,6 +22,19 @@ export default function LoginPage() {
           <p className="mt-2 text-[14px] text-black/50 font-medium">
             Use your Google account to access your dashboard.
           </p>
+
+          {oauthError === "oauth_failed" && (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-[12px] font-semibold text-amber-700">
+                Google sign-in didn’t finish. Please try again.
+              </p>
+              {oauthReason && (
+                <p className="mt-1 text-[11px] text-amber-700/80">
+                  Debug: {oauthReason}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="mt-8">
             <Link

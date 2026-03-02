@@ -583,14 +583,30 @@ export default function Landing() {
               Setup takes 3 minutes. Your first auto-reply goes live today.
             </p>
 
-            <div className="mx-auto max-w-[460px]">
-              <Link href="/api/auth/google">
-                <button
-                  className="h-14 w-full rounded-full bg-white text-[#0055ff] font-semibold text-[14px] hover:bg-white/90 transition-colors"
-                >
-                  Join Now
-                </button>
-              </Link>
+            <div className="mx-auto max-w-[860px]">
+              <div className="grid gap-4 md:grid-cols-[320px,1fr] md:items-center">
+                <Link href="/api/auth/google" className="no-underline">
+                  <button
+                    className="h-14 w-full rounded-full bg-white text-[#0055ff] font-semibold text-[14px] hover:bg-white/90 transition-colors"
+                  >
+                    Join Now
+                  </button>
+                </Link>
+
+                <div className="rounded-2xl border border-white/30 bg-white/10 px-4 py-3 text-left backdrop-blur-sm">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/85">
+                    What Solsara can access
+                  </p>
+                  <ul className="mt-2 space-y-1 text-[12px] text-white/88 leading-relaxed">
+                    <li>• Your Google Business Profile reviews</li>
+                    <li>• Permission to draft/post review replies</li>
+                    <li>• Basic account identity (email) for login</li>
+                  </ul>
+                  <p className="mt-2 text-[11px] text-white/70">
+                    No Gmail, Drive, or personal files. You can revoke access anytime in your Google Account.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
       </section>
