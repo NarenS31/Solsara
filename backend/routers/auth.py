@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from google.oauth2 import id_token
@@ -68,7 +68,20 @@ def google_login():
     logger.info("google_login_redirect", extra={"state": state})
 
     # redirects business owner to Google's login page
-    return RedirectResponse(authorization_url)
+    response = RedirectResponse(authorization_url)
+    # persist PKCE code_verifier for token exchange in callback
+    code_verifier = getattr(flow, "code_verifier", None)
+    if code_verifier:
+        secure_cookie = not settings.google_redirect_uri.startswith("http://")
+        response.set_cookie(
+            "oauth_code_verifier",
+            code_verifier,
+            httponly=True,
+            secure=secure_cookie,
+            samesite="lax",
+            max_age=10 * 60,
+        )
+    return response
 
 
 def _get_google_user_id(credentials) -> str | None:
@@ -87,10 +100,14 @@ def _get_google_user_id(credentials) -> str | None:
 
 
 @router.get("/callback")
-def google_callback(code: str, state: str = None):
+def google_callback(code: str, request: Request, state: str = None):
     try:
         logger.info("google_callback_start", extra={"state": state})
         flow = create_flow()
+        # restore PKCE code_verifier from cookie if present
+        code_verifier = request.cookies.get("oauth_code_verifier")
+        if code_verifier:
+            flow.code_verifier = code_verifier
         flow.fetch_token(code=code)
         credentials = flow.credentials
         google_user_id = _get_google_user_id(credentials)
@@ -119,7 +136,9 @@ def google_callback(code: str, state: str = None):
                 redirect_url = f"{settings.frontend_url}/dashboard?business_id={business_id}"
                 logger.info("google_callback_existing_business",
                             extra={"business_id": business_id})
-                return RedirectResponse(url=redirect_url)
+                resp = RedirectResponse(url=redirect_url)
+                resp.delete_cookie("oauth_code_verifier")
+                return resp
 
         # New user: create business with google_user_id
         insert_data = {
@@ -154,8 +173,10 @@ def google_callback(code: str, state: str = None):
         business_id = result.data[0]["id"]
         redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}"
         logger.info("google_callback_new_business",
-                    extra={"business_id": business_id})
-        return RedirectResponse(url=redirect_url)
+                extra={"business_id": business_id})
+        resp = RedirectResponse(url=redirect_url)
+        resp.delete_cookie("oauth_code_verifier")
+        return resp
 
     except HTTPException:
         raise
@@ -167,7 +188,9 @@ def google_callback(code: str, state: str = None):
         safe_redirect = f"{settings.frontend_url}/login?error=oauth_failed&reason={reason}"
         if safe_detail:
             safe_redirect = f"{safe_redirect}&detail={safe_detail}"
-        return RedirectResponse(url=safe_redirect)
+        resp = RedirectResponse(url=safe_redirect)
+        resp.delete_cookie("oauth_code_verifier")
+        return resp
 
 
 @router.get("/refresh/{business_id}")
