@@ -7,6 +7,7 @@ from ..config import settings
 from ..db import supabase
 import os
 import logging
+from urllib.parse import quote
 
 router = APIRouter(prefix="/auth")
 logger = logging.getLogger("solsara.auth")
@@ -49,7 +50,8 @@ def create_flow():
 def google_login():
     if not settings.google_client_id or not settings.google_client_secret:
         logger.error("google_login_missing_oauth_config")
-        raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+        raise HTTPException(
+            status_code=500, detail="Google OAuth is not configured")
 
     flow = create_flow()
 
@@ -112,9 +114,11 @@ def google_callback(code: str, state: str = None):
                 }
                 if credentials.refresh_token:
                     update_data["refresh_token"] = credentials.refresh_token
-                supabase.table("businesses").update(update_data).eq("id", business_id).execute()
+                supabase.table("businesses").update(
+                    update_data).eq("id", business_id).execute()
                 redirect_url = f"{settings.frontend_url}/dashboard?business_id={business_id}"
-                logger.info("google_callback_existing_business", extra={"business_id": business_id})
+                logger.info("google_callback_existing_business",
+                            extra={"business_id": business_id})
                 return RedirectResponse(url=redirect_url)
 
         # New user: create business with google_user_id
@@ -131,7 +135,8 @@ def google_callback(code: str, state: str = None):
             result = supabase.table("businesses").insert(insert_data).execute()
         except Exception:
             # Fallback for older schema (missing google_user_id or required name field)
-            logger.warning("google_callback_insert_with_google_user_id_failed_retrying")
+            logger.warning(
+                "google_callback_insert_with_google_user_id_failed_retrying")
             fallback_insert = {
                 "access_token": credentials.token,
                 "refresh_token": credentials.refresh_token,
@@ -139,21 +144,29 @@ def google_callback(code: str, state: str = None):
                 "is_active": False,
                 "name": "New Business",
             }
-            result = supabase.table("businesses").insert(fallback_insert).execute()
+            result = supabase.table("businesses").insert(
+                fallback_insert).execute()
 
         if not result.data:
-            raise HTTPException(status_code=500, detail="Failed to save credentials")
+            raise HTTPException(
+                status_code=500, detail="Failed to save credentials")
 
         business_id = result.data[0]["id"]
         redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}"
-        logger.info("google_callback_new_business", extra={"business_id": business_id})
+        logger.info("google_callback_new_business",
+                    extra={"business_id": business_id})
         return RedirectResponse(url=redirect_url)
 
     except HTTPException:
         raise
     except Exception as e:
         logger.exception("google_callback_failed")
-        safe_redirect = f"{settings.frontend_url}/login?error=oauth_failed&reason={str(type(e).__name__)}"
+        reason = str(type(e).__name__)
+        detail = str(e) if str(e) else ""
+        safe_detail = quote(detail[:180]) if detail else ""
+        safe_redirect = f"{settings.frontend_url}/login?error=oauth_failed&reason={reason}"
+        if safe_detail:
+            safe_redirect = f"{safe_redirect}&detail={safe_detail}"
         return RedirectResponse(url=safe_redirect)
 
 
@@ -169,7 +182,8 @@ def refresh_token(business_id: str):
     business = result.data[0]
 
     if not business.get("refresh_token"):
-        logger.warning("refresh_missing_token", extra={"business_id": business_id})
+        logger.warning("refresh_missing_token", extra={
+                       "business_id": business_id})
         raise HTTPException(status_code=400, detail="No refresh token on file")
 
     # rebuilds credentials object from stored tokens

@@ -8,6 +8,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const oauthError = searchParams.get("error");
   const oauthReason = searchParams.get("reason");
+  const oauthDetail = searchParams.get("detail");
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#f7f9fc] px-5">
@@ -32,6 +33,11 @@ function LoginContent() {
               {oauthReason && (
                 <p className="mt-1 text-[11px] text-amber-700/80">
                   Debug: {oauthReason}
+                </p>
+              )}
+              {oauthDetail && (
+                <p className="mt-1 text-[11px] text-amber-700/70 break-words">
+                  Detail: {decodeURIComponent(oauthDetail)}
                 </p>
               )}
             </div>
