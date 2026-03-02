@@ -85,17 +85,6 @@ function NavAuthAndCta() {
             >
               Sign up
             </Link>
-            <Link
-              href="/api/auth/google"
-        className="relative h-9 px-5 rounded-full text-[12px] font-semibold flex items-center shrink-0 no-underline transition-all hover:scale-[1.04] active:scale-[0.97]"
-        style={{
-          background: "linear-gradient(160deg, rgba(10,10,10,0.88) 0%, rgba(30,30,30,0.96) 100%)",
-          color: "#fff",
-          boxShadow: "0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 16px rgba(0,0,0,0.25)",
-        }}
-      >
-        Start free trial
-      </Link>
     </div>
   );
 }
