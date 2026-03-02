@@ -6,11 +6,14 @@ from google.auth.transport import requests as google_requests
 from ..config import settings
 from ..db import supabase
 import os
+import logging
 
 router = APIRouter(prefix="/auth")
+logger = logging.getLogger("solsara.auth")
 
-# required for localhost — remove in production
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+# required for localhost HTTP only — not needed in production (HTTPS)
+if settings.google_redirect_uri.startswith("http://"):
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # the permission we're requesting from Google
 # business.manage lets us read reviews and post responses
@@ -44,6 +47,10 @@ def create_flow():
 
 @router.get("/google")
 def google_login():
+    if not settings.google_client_id or not settings.google_client_secret:
+        logger.error("google_login_missing_oauth_config")
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+
     flow = create_flow()
 
     # generates the Google login URL
@@ -55,6 +62,8 @@ def google_login():
         include_granted_scopes="true",
         prompt="consent"
     )
+
+    logger.info("google_login_redirect", extra={"state": state})
 
     # redirects business owner to Google's login page
     return RedirectResponse(authorization_url)
@@ -78,6 +87,7 @@ def _get_google_user_id(credentials) -> str | None:
 @router.get("/callback")
 def google_callback(code: str, state: str = None):
     try:
+        logger.info("google_callback_start", extra={"state": state})
         flow = create_flow()
         flow.fetch_token(code=code)
         credentials = flow.credentials
@@ -99,6 +109,7 @@ def google_callback(code: str, state: str = None):
                     update_data["refresh_token"] = credentials.refresh_token
                 supabase.table("businesses").update(update_data).eq("id", business_id).execute()
                 redirect_url = f"{settings.frontend_url}/dashboard?business_id={business_id}"
+                logger.info("google_callback_existing_business", extra={"business_id": business_id})
                 return RedirectResponse(url=redirect_url)
 
         # New user: create business with google_user_id
@@ -118,13 +129,15 @@ def google_callback(code: str, state: str = None):
 
         business_id = result.data[0]["id"]
         redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}"
+        logger.info("google_callback_new_business", extra={"business_id": business_id})
         return RedirectResponse(url=redirect_url)
 
     except HTTPException:
         raise
     except Exception as e:
-        print("ERROR:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("google_callback_failed")
+        safe_redirect = f"{settings.frontend_url}/login?error=oauth_failed"
+        return RedirectResponse(url=safe_redirect)
 
 
 @router.get("/refresh/{business_id}")
@@ -137,6 +150,10 @@ def refresh_token(business_id: str):
         raise HTTPException(status_code=404, detail="Business not found")
 
     business = result.data[0]
+
+    if not business.get("refresh_token"):
+        logger.warning("refresh_missing_token", extra={"business_id": business_id})
+        raise HTTPException(status_code=400, detail="No refresh token on file")
 
     # rebuilds credentials object from stored tokens
     from google.oauth2.credentials import Credentials
@@ -157,5 +174,7 @@ def refresh_token(business_id: str):
         "access_token": credentials.token,
         "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None
     }).eq("id", business_id).execute()
+
+    logger.info("refresh_success", extra={"business_id": business_id})
 
     return {"message": "Token refreshed"}

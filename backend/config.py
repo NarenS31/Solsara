@@ -1,5 +1,10 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
 from typing import List
+
+# .env at repo root (for local dev); Railway uses env vars, no file needed
+_env_path = Path(__file__).resolve().parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -32,7 +37,8 @@ class Settings(BaseSettings):
     allowed_origins: List[str] = ["http://localhost:3000"]
 
     class Config:
-        env_file = "/Users/narensara11/Documents/solsara/.env"
+        env_file = str(_env_path) if _env_path.exists() else None
+        extra = "ignore"
 
 
 settings = Settings()

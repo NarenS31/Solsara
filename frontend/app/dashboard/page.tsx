@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -121,10 +122,67 @@ function Avatar({ name }: { name: string }) {
 
 /* ─── Dashboard ──────────────────────────────────────────────── */
 export default function Dashboard() {
+  const searchParams = useSearchParams();
+  const businessId = searchParams.get("business_id");
+  
   const [reviews, setReviews] = useState(MOCK_REVIEWS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeNav, setActiveNav] = useState("reviews");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
+
+  // Fetch reviews from backend API
+  useEffect(() => {
+    if (!businessId) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchReviews = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+        const response = await fetch(`${backendUrl}/reviews?business_id=${businessId}&limit=50`, {
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Normalize backend response to frontend format
+        if (data.reviews && Array.isArray(data.reviews)) {
+          const normalizedReviews = data.reviews.map((r: any) => ({
+            id: r.id,
+            reviewer: r.reviewer || "Anonymous",
+            rating: r.rating || 0,
+            comment: r.comment || "",
+            time: r.time || "unknown",
+            status: r.status || "posted",
+            response: r.response || null,
+            flagReason: r.flagReason || undefined,
+          }));
+          setReviews(normalizedReviews);
+        } else {
+          setReviews([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch reviews:", err);
+        setError(err instanceof Error ? err.message : "Failed to load reviews");
+        // Fallback to mock data on error
+        setReviews(MOCK_REVIEWS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReviews();
+  }, [businessId]);
 
   const posted = reviews.filter((r) => r.status === "posted").length;
   const held = reviews.filter((r) => r.status === "held").length;
@@ -229,7 +287,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-[22px] font-black tracking-[-0.03em] text-black">Review Replies</h1>
             <p className="mt-1 text-[12px] font-medium text-black/40">
-              Monitoring · Auto-responding · 24/7
+              {loading ? "Loading..." : error ? "Connection issue" : "Monitoring · Auto-responding · 24/7"}
             </p>
           </div>
           <Button
@@ -240,6 +298,64 @@ export default function Dashboard() {
           </Button>
         </div>
 
+        {/* Loading state */}
+        {loading && !businessId && (
+          <div className="rounded-xl border border-black/[0.06] bg-white p-12 text-center">
+            <div className="inline-flex h-8 w-8 animate-spin rounded-full border-2 border-black/20 border-t-[#0055ff] mb-4" />
+            <p className="text-[13px] font-medium text-black/40">Loading your reviews...</p>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && businessId && (
+          <div className="rounded-xl border border-red-100 bg-red-50 p-6 mb-8">
+            <p className="text-[13px] font-medium text-red-700">
+              ⚠️ Failed to load reviews: {error}
+            </p>
+            <p className="mt-2 text-[12px] text-red-600/70">
+              Showing mock data. Make sure your backend is running at {process.env.NEXT_PUBLIC_BACKEND_URL || "localhost:8000"}
+            </p>
+          </div>
+        )}
+
+        {/* No business ID state */}
+        {!businessId && !loading && (
+          <div className="rounded-xl border border-amber-100 bg-amber-50 p-6 mb-8">
+            <p className="text-[13px] font-medium text-amber-700">
+              📋 No business selected
+            </p>
+            <p className="mt-2 text-[12px] text-amber-600/70">
+              Sign in with Google to connect your business profile and see real reviews.
+            </p>
+            <Link href="/api/auth/google" className="mt-4 inline-block">
+              <Button className="h-9 rounded-lg bg-[#0055ff] text-[12px] font-semibold text-white hover:bg-[#0044dd]">
+                Connect Business
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && businessId && reviews.length === 0 && (
+          <div className="rounded-xl border border-black/[0.06] bg-white p-12 text-center">
+            <div className="text-[32px] mb-3">📭</div>
+            <p className="text-[14px] font-semibold text-black">No reviews yet</p>
+            <p className="mt-2 text-[12px] text-black/40">
+              Once your Google Business Profile gets reviews, they'll appear here.
+            </p>
+            <p className="mt-4 text-[11px] text-black/30">
+              Need test data? Use this endpoint to seed demos:
+              <br />
+              <code className="mt-2 block bg-black/5 p-2 rounded text-[10px] font-mono">
+                POST /reviews/seed/{businessId}
+              </code>
+            </p>
+          </div>
+        )}
+
+        {/* Content sections (only show if we have data) */}
+        {!loading && reviews.length > 0 && (
+          <>
         {/* Stats */}
         <div className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
@@ -416,6 +532,8 @@ export default function Dashboard() {
               ))}
           </div>
         </section>
+          </>
+        )}
       </main>
     </div>
   );

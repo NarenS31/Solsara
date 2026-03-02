@@ -1,4 +1,5 @@
 # backend/main.py
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .db import supabase
@@ -6,10 +7,16 @@ from .routers.auth import router as auth_router
 from .routers.webhooks import router as webhooks_router
 from .routers.checkout import router as checkout_router  # added
 from .routers.demo import router as demo_router
+from .routers.reviews import router as reviews_router
 from .scheduler import start_scheduler
 from .config import settings
 
 app = FastAPI()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 
 # CORS for frontend
 app.add_middleware(
@@ -25,6 +32,7 @@ app.include_router(auth_router)
 app.include_router(webhooks_router)
 app.include_router(checkout_router)  # new
 app.include_router(demo_router)
+app.include_router(reviews_router)
 
 # Background scheduler
 
