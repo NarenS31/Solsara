@@ -145,6 +145,16 @@ function StepGoogle({
         </div>
       </div>
 
+      {/* Trust line */}
+      <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
+        <p className="text-[12px] font-semibold text-amber-800">
+          We only access your reviews. We never edit your business info, hours, or listing details. Ever.
+        </p>
+        <p className="mt-1 text-[11px] text-amber-700/80">
+          Google bundles review access under a broader permission, but we only call review read + reply endpoints.
+        </p>
+      </div>
+
       {/* OAuth button or success */}
       <AnimatePresence mode="wait">
         {alreadyConnected ? (

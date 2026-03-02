@@ -45,6 +45,13 @@ export default function TermsPage() {
           </section>
 
           <section>
+            <h2 className="text-[16px] font-bold text-black mb-2">2.1 Data Access Scope</h2>
+            <p>
+              We only access and process your Google Business Profile reviews and draft/post responses to those reviews. We do not edit your business name, phone number, hours, address, or listing details.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-[16px] font-bold text-black mb-2">3. Your Responsibilities</h2>
             <p>
               You are responsible for the accuracy of information you provide, for maintaining the security of your account, and for all activity that occurs under your account.
