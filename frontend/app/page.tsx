@@ -578,11 +578,13 @@ export default function Landing() {
             </p>
 
             <div className="mx-auto max-w-[460px]">
-              <button
-                className="h-14 w-full rounded-full bg-white text-[#0055ff] font-semibold text-[14px] hover:bg-white/90 transition-colors"
-              >
-                Join Now
-              </button>
+              <Link href="/api/auth/google">
+                <button
+                  className="h-14 w-full rounded-full bg-white text-[#0055ff] font-semibold text-[14px] hover:bg-white/90 transition-colors"
+                >
+                  Join Now
+                </button>
+              </Link>
             </div>
           </div>
       </section>
