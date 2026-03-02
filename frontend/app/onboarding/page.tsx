@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -601,8 +601,8 @@ function Done({ name }: { name: string }) {
   );
 }
 
-/* ─── Main onboarding page ───────────────────────────────────── */
-export default function Onboarding() {
+/* ─── Main onboarding content (uses useSearchParams) ───────────── */
+function OnboardingContent() {
   const searchParams = useSearchParams();
   const businessIdFromUrl = searchParams.get("business_id");
 
@@ -742,5 +742,18 @@ export default function Onboarding() {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─── Page wrapper with Suspense ───────────────────────────────── */
+export default function Onboarding() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0055ff] border-t-transparent" />
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   );
 }
