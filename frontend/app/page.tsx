@@ -86,18 +86,34 @@ function Navbar() {
             </Link>
           </div>
 
-          {/* CTA */}
-          <Link
-            href="/onboarding"
-            className="relative h-9 px-5 rounded-full text-[12px] font-semibold flex items-center shrink-0 no-underline transition-all hover:scale-[1.04] active:scale-[0.97]"
-            style={{
-              background: "linear-gradient(160deg, rgba(10,10,10,0.88) 0%, rgba(30,30,30,0.96) 100%)",
-              color: "#fff",
-              boxShadow: "0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 16px rgba(0,0,0,0.25)",
-            }}
-          >
-            Try free →
-          </Link>
+          {/* Auth + CTA */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href="/dashboard"
+              className="hidden sm:block text-[12px] font-medium no-underline transition-colors"
+              style={{ color: "rgba(0,0,0,0.52)" }}
+            >
+              Log in
+            </Link>
+            <Link
+              href="/onboarding"
+              className="hidden sm:block text-[12px] font-medium no-underline transition-colors"
+              style={{ color: "rgba(0,0,0,0.52)" }}
+            >
+              Sign up
+            </Link>
+            <Link
+              href="/onboarding"
+              className="relative h-9 px-5 rounded-full text-[12px] font-semibold flex items-center shrink-0 no-underline transition-all hover:scale-[1.04] active:scale-[0.97]"
+              style={{
+                background: "linear-gradient(160deg, rgba(10,10,10,0.88) 0%, rgba(30,30,30,0.96) 100%)",
+                color: "#fff",
+                boxShadow: "0 1px 0 rgba(255,255,255,0.15) inset, 0 6px 16px rgba(0,0,0,0.25)",
+              }}
+            >
+              Start free trial
+            </Link>
+          </div>
         </nav>
       </div>
     </header>
@@ -351,10 +367,11 @@ function FeaturesBento() {
 const PLANS = [
   {
     name: "OS Entry",
-    price: "$299",
+    price: "$149",
     period: "/mo",
+    trialSubtext: "14 days free, then $149/mo. Cancel anytime. No credit card required.",
     desc: "Review Automation + Reputation Dashboard. One location.",
-    cta: "Get early access",
+    cta: "Start free trial",
     primary: true,
     href: "/onboarding",
   },
@@ -362,6 +379,7 @@ const PLANS = [
     name: "OS Growth",
     price: "$499",
     period: "/mo",
+    trialSubtext: null,
     desc: "Adds Review Velocity + Social Proof + Gemini Feeder.",
     cta: "Coming soon",
     primary: false,
@@ -371,6 +389,7 @@ const PLANS = [
     name: "OS Full Stack",
     price: "$799",
     period: "/mo",
+    trialSubtext: null,
     desc: "Everything. All 6 modules + Dedicated AI assistant.",
     cta: "Coming soon",
     primary: false,
@@ -402,7 +421,7 @@ export default function Landing() {
           <motion.div variants={fadeUp} className="mb-7">
             <span className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-black/50 shadow-sm backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-[#0055ff] animate-pulse" />
-              Reputation OS — Early Access
+              Reputation OS — Live Now
             </span>
           </motion.div>
 
@@ -429,7 +448,7 @@ export default function Landing() {
               href="/onboarding"
               className="inline-flex h-12 items-center rounded-full bg-black px-7 text-[13px] font-semibold text-white no-underline transition-all hover:bg-black/85 hover:scale-[1.02] active:scale-[0.98]"
             >
-              Try Solsara free
+              Start your 14-day free trial →
             </Link>
             <Link
               href="#how"
@@ -514,6 +533,11 @@ export default function Landing() {
                     <span className="text-[36px] font-black tracking-[-0.04em] text-black">{plan.price}</span>
                     <span className="text-[13px] text-black/35 font-medium">{plan.period}</span>
                   </div>
+                  {plan.trialSubtext && (
+                    <p className="text-[12px] text-emerald-600 font-medium mb-3 leading-relaxed">
+                      {plan.trialSubtext}
+                    </p>
+                  )}
                   <p className="text-[13px] text-black/45 leading-relaxed mb-7 flex-1">{plan.desc}</p>
                   <Link
                     href={plan.href}
@@ -536,14 +560,14 @@ export default function Landing() {
       <section className="relative z-10 bg-[#0055ff] px-5 py-28 text-center md:px-10">
           <div className="mx-auto max-w-[600px]">
             <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/80">
-              Early Access
+              Live Now
             </span>
             <h2 className="mt-3 mb-4 text-[36px] md:text-[56px] font-black tracking-[-0.04em] text-white leading-[1.05]">
               Your reputation. <br />
               <span className="text-white">Automated.</span>
             </h2>
             <p className="mb-8 text-[15px] text-white/80 font-medium">
-              Limited early access spots. Setup takes 3 minutes.
+              Setup takes 3 minutes. Your first auto-reply goes live today.
             </p>
 
             {submitted ? (
@@ -580,9 +604,12 @@ export default function Landing() {
               © 2025 Solsara · Reputation OS
             </div>
             <div className="flex gap-6">
-              {["Terms", "Privacy"].map((l) => (
-                <Link key={l} href="#" className="text-[11px] font-medium text-black/35 no-underline hover:text-black transition-colors uppercase tracking-widest">
-                  {l}
+              {[
+                { label: "Terms", href: "/terms" },
+                { label: "Privacy", href: "/privacy" },
+              ].map((l) => (
+                <Link key={l.label} href={l.href} className="text-[11px] font-medium text-black/35 no-underline hover:text-black transition-colors uppercase tracking-widest">
+                  {l.label}
                 </Link>
               ))}
             </div>

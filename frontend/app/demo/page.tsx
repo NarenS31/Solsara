@@ -274,6 +274,14 @@ export default function Demo() {
 
           <div className="flex items-center gap-3">
             <Link
+              href="/"
+              className="flex items-center gap-1.5 text-[12px] font-medium text-black/50 no-underline hover:text-black transition-colors"
+            >
+              <span className="text-[10px]">←</span>
+              <span className="hidden sm:inline">Back to website</span>
+              <span className="sm:hidden">Back</span>
+            </Link>
+            <Link
               href="/onboarding"
               className="h-9 rounded-full bg-black px-5 text-[12px] font-semibold text-white no-underline flex items-center hover:bg-black/85 transition-colors"
             >
@@ -518,6 +526,28 @@ export default function Demo() {
               )}
             </button>
 
+            {/* Try it out CTA — prominent, near top so users don't scroll past */}
+            <div className="rounded-xl border-2 border-[#0055ff]/25 bg-gradient-to-br from-[#0055ff] to-[#0044dd] p-5 shadow-[0_4px_24px_rgba(0,85,255,0.25)]">
+              <div className="text-[13px] font-black tracking-tight text-white leading-snug mb-1">
+                Try it out for yourself
+              </div>
+              <p className="text-[11px] text-white/80 font-medium mb-4 leading-relaxed">
+                Put your reviews on autopilot. Setup takes 3 minutes.
+              </p>
+              <Link
+                href="/onboarding"
+                className="block w-full rounded-lg bg-white py-3 text-center text-[13px] font-bold text-[#0055ff] no-underline hover:bg-white/95 transition-colors shadow-sm"
+              >
+                Start free trial →
+              </Link>
+              <Link
+                href="/"
+                className="mt-3 block text-center text-[11px] font-medium text-white/60 no-underline hover:text-white/80 transition-colors"
+              >
+                ← Back to website
+              </Link>
+            </div>
+
             {/* Tone selector */}
             <div className="rounded-xl border border-black/[0.06] bg-white p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -724,28 +754,6 @@ export default function Demo() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
-
-            {/* CTA */}
-            <div className="rounded-xl bg-[#0a0f1e] p-5 space-y-3">
-              <div className="text-[15px] font-black tracking-tight text-white leading-snug">
-                Ready to put your<br />reviews on autopilot?
-              </div>
-              <p className="text-[12px] text-white/40 font-medium leading-relaxed">
-                Takes 3 minutes to set up. Your first auto-reply goes live today.
-              </p>
-              <Link
-                href="/onboarding"
-                className="block w-full rounded-xl bg-[#0055ff] py-3 text-center text-[13px] font-bold text-white no-underline hover:bg-[#0044dd] transition-colors"
-              >
-                Start free trial →
-              </Link>
-              <Link
-                href="/"
-                className="block text-center text-[11px] font-medium text-white/25 no-underline hover:text-white/50 transition-colors"
-              >
-                Back to homepage
-              </Link>
             </div>
           </div>
         </div>
