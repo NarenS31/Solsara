@@ -68,6 +68,12 @@ function NavAuthAndCta() {
   return (
     <div className="flex items-center gap-6 sm:gap-8 shrink-0">
 <Link
+              href="/dashboard"
+              className="text-[13px] font-medium text-black/50 no-underline transition-colors hover:text-black py-1"
+            >
+              Dashboard
+            </Link>
+<Link
               href="/login"
               className="text-[13px] font-medium text-black/50 no-underline transition-colors hover:text-black py-1"
             >
