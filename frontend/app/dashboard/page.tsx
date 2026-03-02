@@ -158,16 +158,16 @@ export default function Dashboard() {
       {/* ─ Sidebar ──────────────────────────────────── */}
       <aside className="hidden md:flex md:fixed md:inset-y-0 md:left-0 md:w-60 flex-col bg-white border-r border-black/[0.06]">
 
-        {/* Logo */}
+        {/* Logo + Back */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-black/[0.05]">
           <Link href="/" className="no-underline">
             <span className="text-[15px] font-black tracking-tight text-black">
               Sol<span className="text-[#0055ff]">sara</span>
             </span>
           </Link>
-          <span className="rounded-full bg-[#f0f5ff] px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-[#0055ff]">
-            v1
-          </span>
+          <Link href="/" className="text-[13px] font-medium text-black/50 no-underline hover:underline">
+            ← Back
+          </Link>
         </div>
 
         {/* Nav */}
