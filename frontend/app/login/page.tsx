@@ -1,9 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginContent() {
   const searchParams = useSearchParams();
   const oauthError = searchParams.get("error");
   const oauthReason = searchParams.get("reason");
@@ -63,5 +64,21 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center bg-[#f7f9fc] px-5">
+          <div className="rounded-xl border border-black/[0.06] bg-white px-5 py-4 text-[13px] font-medium text-black/45 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+            Loading sign in...
+          </div>
+        </main>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

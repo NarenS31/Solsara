@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -121,7 +121,7 @@ function Avatar({ name }: { name: string }) {
 }
 
 /* ─── Dashboard ──────────────────────────────────────────────── */
-export default function Dashboard() {
+function DashboardContent() {
   const searchParams = useSearchParams();
   const businessId = searchParams.get("business_id");
   
@@ -536,5 +536,21 @@ export default function Dashboard() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center bg-[#f7f9fc] px-6">
+          <div className="rounded-xl border border-black/[0.06] bg-white px-5 py-4 text-[13px] font-medium text-black/45 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+            Loading dashboard...
+          </div>
+        </main>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
