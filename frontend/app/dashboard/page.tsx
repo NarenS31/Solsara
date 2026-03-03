@@ -19,59 +19,6 @@ const NAV_ITEMS = [
   { id: "receptionist", label: "Text Receptionist", icon: "⊡", soon: true },
 ];
 
-const MOCK_REVIEWS = [
-  {
-    id: 1,
-    reviewer: "James Thornton",
-    rating: 5,
-    comment: "Absolutely outstanding service. The team went above and beyond every expectation I had. Best experience in years.",
-    time: "2h ago",
-    status: "posted",
-    response: "Thank you so much James! We truly appreciate your kind words and are thrilled we could exceed your expectations. Hope to see you again soon!",
-    flagReason: undefined as string | undefined,
-  },
-  {
-    id: 2,
-    reviewer: "Sarah Mitchell",
-    rating: 1,
-    comment: "I got food poisoning after eating here. Been sick for two days. This is completely unacceptable and I'm considering legal action.",
-    time: "4h ago",
-    status: "held",
-    response: null as string | null,
-    flagReason: "Health complaint + legal threat detected",
-  },
-  {
-    id: 3,
-    reviewer: "David Park",
-    rating: 4,
-    comment: "Really solid experience overall. The staff were friendly and the quality was great. Would definitely recommend to friends.",
-    time: "6h ago",
-    status: "posted",
-    response: "Thanks so much David! We're really glad you had a great experience and we appreciate the recommendation.",
-    flagReason: undefined as string | undefined,
-  },
-  {
-    id: 4,
-    reviewer: "Emma Rodriguez",
-    rating: 3,
-    comment: "Decent place but the wait time was longer than expected. Food quality was good though.",
-    time: "1d ago",
-    status: "posted",
-    response: "Hi Emma, thank you for the honest feedback! We're actively working on our wait times and hope to give you a much faster experience next visit.",
-    flagReason: undefined as string | undefined,
-  },
-  {
-    id: 5,
-    reviewer: "Michael Chen",
-    rating: 5,
-    comment: "Incredible attention to detail. You can tell the team really cares about what they do.",
-    time: "2d ago",
-    status: "posted",
-    response: "Michael, this genuinely made our day — thank you! We do care deeply and it means everything to hear that it shows.",
-    flagReason: undefined as string | undefined,
-  },
-];
-
 /* ─── Tiny components ────────────────────────────────────────── */
 function Stars({ rating }: { rating: number }) {
   return (
@@ -125,7 +72,7 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const businessId = searchParams.get("business_id");
   
-  const [reviews, setReviews] = useState(MOCK_REVIEWS);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeNav, setActiveNav] = useState("reviews");
@@ -174,8 +121,7 @@ function DashboardContent() {
       } catch (err) {
         console.error("Failed to fetch reviews:", err);
         setError(err instanceof Error ? err.message : "Failed to load reviews");
-        // Fallback to mock data on error
-        setReviews(MOCK_REVIEWS);
+        setReviews([]);
       } finally {
         setLoading(false);
       }
@@ -186,7 +132,9 @@ function DashboardContent() {
 
   const posted = reviews.filter((r) => r.status === "posted").length;
   const held = reviews.filter((r) => r.status === "held").length;
-  const avg = (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1);
+  const avg = reviews.length > 0
+    ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1)
+    : "0.0";
 
   function approve(id: number) {
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: "posted", response: editText } : r)));
@@ -313,7 +261,7 @@ function DashboardContent() {
               ⚠️ Failed to load reviews: {error}
             </p>
             <p className="mt-2 text-[12px] text-red-600/70">
-              Showing mock data. Make sure your backend is running at {process.env.NEXT_PUBLIC_BACKEND_URL || "localhost:8000"}
+              Make sure your backend is running at {process.env.NEXT_PUBLIC_BACKEND_URL || "localhost:8000"}
             </p>
           </div>
         )}
