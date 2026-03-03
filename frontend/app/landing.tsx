@@ -422,7 +422,7 @@ export default function Landing() {
                                 </div>
                                 <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: "1.5", marginBottom: "24px", marginTop: 0 }}>{plan.desc}</p>
                                 <Link
-                                    href={plan.soon ? "#" : "/dashboard"}
+                                    href={plan.soon ? "#" : "/onboarding"}
                                     style={{
                                         display: "block", textAlign: "center",
                                         padding: "12px 20px",

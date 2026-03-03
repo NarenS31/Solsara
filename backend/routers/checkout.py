@@ -12,7 +12,8 @@ stripe.api_key = settings.stripe_secret_key
 @router.post("/checkout/{business_id}")
 async def create_checkout(business_id: str):
     if not settings.stripe_price_id:
-        raise HTTPException(status_code=500, detail="Stripe price ID not configured")
+        raise HTTPException(
+            status_code=500, detail="Stripe price ID not configured")
 
     result = supabase.table("businesses").select(
         "id, name").eq("id", business_id).execute()
@@ -53,6 +54,7 @@ async def create_checkout(business_id: str):
         mode="subscription",
         customer=stripe_customer_id,
         line_items=[{"price": settings.stripe_price_id, "quantity": 1}],
+        payment_method_collection="always",
         success_url=success_url,
         cancel_url=cancel_url,
         client_reference_id=business_id,
