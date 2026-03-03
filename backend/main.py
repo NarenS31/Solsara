@@ -20,14 +20,24 @@ logging.basicConfig(
 )
 
 # CORS for frontend
-cors_origins = list({
-    *settings.allowed_origins,
-    settings.frontend_url,
+def _normalize_origin(origin: str) -> str:
+    return origin.rstrip("/")
+
+cors_origins = {
+    _normalize_origin(o) for o in [*settings.allowed_origins, settings.frontend_url]
+    if o
+}
+
+# Explicitly allow known production origins
+cors_origins.update({
+    "https://solsara.vercel.app",
+    "https://solsara.ai",
 })
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=sorted(cors_origins),
+    allow_origin_regex=r"https://([a-z0-9-]+\.)*vercel\.app|https://solsara\.ai",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
