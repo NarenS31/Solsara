@@ -64,7 +64,7 @@ def generate_response(
     #     }
 
     # --- Claude Sonnet version ---
-        prompt = f"""You are responding to a Google review on behalf of {business_name}.
+    prompt = f"""You are responding to a Google review on behalf of {business_name}.
 
 Business tone: {tone_description}
 
