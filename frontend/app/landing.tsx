@@ -113,9 +113,15 @@ const FEATURES = [
 ];
 
 const PRICING = [
-    { label: "OS Entry", price: "$299", period: "/mo", desc: "Review Automation + Reputation Dashboard. One location.", cta: "Get early access", primary: true },
-    { label: "OS Growth", price: "$499", period: "/mo", desc: "Adds Velocity + Social Proof + Gemini Feeder.", cta: "Coming soon", primary: false, soon: true },
-    { label: "OS Full Stack", price: "$799", period: "/mo", desc: "Everything. All 6 modules + Dedicated Assistant.", cta: "Coming soon", primary: false, soon: true },
+    {
+        label: "OS",
+        price: "$100",
+        period: "/mo",
+        desc: "Review Automation + Reputation Dashboard. One location.",
+        fineprint: "14 days free, then $100/mo. Cancel anytime. No credit card required.",
+        cta: "Start free trial",
+        primary: true,
+    },
 ];
 
 export default function Landing() {
@@ -420,7 +426,10 @@ export default function Landing() {
                                     <span style={{ fontFamily: "var(--font-display)", fontSize: "32px", fontWeight: "700", letterSpacing: "-0.04em", color: plan.primary ? "var(--accent)" : "var(--text-primary)" }}>{plan.price}</span>
                                     <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--text-muted)" }}>{plan.period}</span>
                                 </div>
-                                <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: "1.5", marginBottom: "24px", marginTop: 0 }}>{plan.desc}</p>
+                                <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: "1.5", marginBottom: "12px", marginTop: 0 }}>{plan.desc}</p>
+                                {plan.fineprint && (
+                                    <p style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.5", marginBottom: "24px", marginTop: 0 }}>{plan.fineprint}</p>
+                                )}
                                 <Link
                                     href={plan.soon ? "#" : "/onboarding"}
                                     style={{
@@ -433,6 +442,8 @@ export default function Landing() {
                                         fontFamily: "var(--font-display)", fontSize: "13px", fontWeight: "600",
                                         textDecoration: "none",
                                         cursor: plan.soon ? "default" : "pointer",
+                                        margin: "0 auto",
+                                        maxWidth: "220px",
                                     }}
                                 >
                                     {plan.cta}
