@@ -24,6 +24,7 @@ class Settings(BaseSettings):
 
     # LLM
     openai_api_key: str = ""
+    anthropic_api_key: str = ""
 
     # Stripe
     stripe_secret_key: str

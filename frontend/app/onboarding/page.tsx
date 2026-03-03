@@ -249,18 +249,27 @@ function StepVoice({
 }: {
   data: FormData;
   onChange: (k: keyof FormData, v: string) => void;
-  onNext: () => void;
+  onNext: () => Promise<void>;
 }) {
   const VOICE_OPTIONS = [
-    { id: "warm",         label: "Warm & personal",  desc: "Like talking to a friend you trust" },
+    { id: "warm",         label: "Calm & warm",       desc: "Like talking to a friend you trust" },
     { id: "professional", label: "Professional",      desc: "Polished and business-appropriate" },
     { id: "casual",       label: "Casual & fun",      desc: "Friendly, light, approachable" },
     { id: "premium",      label: "Premium & refined", desc: "Elevated, confident, high-end" },
   ];
 
+  const VOICE_EXAMPLES: Record<string, string> = {
+    warm: "James, this honestly made our morning. So glad you had a great experience. Hope to see you back soon!",
+    professional: "James, thank you for coming in and sharing this. We are glad the team took good care of you and we appreciate the kind words.",
+    casual: "James, love hearing this. Thanks for stopping by and for the shoutout. Come back soon!",
+    premium: "James, thank you for the thoughtful review. We are delighted you enjoyed the experience and look forward to welcoming you back.",
+  };
+
   const [rules, setRules] = useState(DEFAULT_RULES);
   const [newRule, setNewRule] = useState("");
   const [showRules, setShowRules] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   function addRule() {
     if (!newRule.trim()) return;
@@ -273,6 +282,19 @@ function StepVoice({
   }
 
   const valid = data.voice.trim().length > 0;
+
+  async function handleContinue() {
+    if (!valid || saving) return;
+    setSaving(true);
+    setSaveError("");
+    try {
+      await onNext();
+    } catch {
+      setSaveError("Could not save your voice. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -305,6 +327,33 @@ function StepVoice({
               </span>
               <span className="mt-0.5 text-[11px] text-black/35">{opt.desc}</span>
             </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Voice examples */}
+      <div className="space-y-2">
+        <label className="block text-[13px] font-bold text-black">
+          Example responses by tone
+        </label>
+        <div className="grid gap-2">
+          {VOICE_OPTIONS.map((opt) => (
+            <div
+              key={`ex-${opt.id}`}
+              className={cn(
+                "rounded-xl border p-3.5 text-left transition-all duration-200",
+                data.voice === opt.id
+                  ? "border-[#0055ff]/40 bg-[#f0f5ff]"
+                  : "border-black/[0.07] bg-white"
+              )}
+            >
+              <div className={cn("text-[12px] font-semibold", data.voice === opt.id ? "text-[#0055ff]" : "text-black/70")}>
+                {opt.label}
+              </div>
+              <div className="mt-1 text-[12px] text-black/60 leading-relaxed">
+                {VOICE_EXAMPLES[opt.id]}
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -437,17 +486,23 @@ function StepVoice({
         </AnimatePresence>
       </div>
 
+      {saveError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
+          {saveError}
+        </div>
+      )}
+
       <button
-        onClick={onNext}
-        disabled={!valid}
+        onClick={handleContinue}
+        disabled={!valid || saving}
         className={cn(
           "w-full rounded-xl py-3.5 text-[14px] font-bold transition-all duration-200",
-          valid
+          valid && !saving
             ? "bg-black text-white hover:bg-black/85 hover:scale-[1.01] active:scale-[0.99]"
             : "bg-black/[0.06] text-black/25 cursor-not-allowed"
         )}
       >
-        Continue →
+        {saving ? "Saving…" : "Continue →"}
       </button>
     </div>
   );
@@ -731,7 +786,33 @@ function OnboardingContent() {
               ) : step === 1 ? (
                 <StepGoogle data={form} onChange={update} onNext={next} businessId={businessIdFromUrl} />
               ) : step === 2 ? (
-                <StepVoice data={form} onChange={update} onNext={next} />
+                <StepVoice
+                  data={form}
+                  onChange={update}
+                  onNext={async () => {
+                    if (!businessIdFromUrl) {
+                      next();
+                      return;
+                    }
+
+                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                    const response = await fetch(`${backendUrl}/businesses/${businessIdFromUrl}/tone`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        voice: form.voice,
+                        never_say: form.neverSay,
+                        example_response: form.exampleResponse,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`Failed to save voice: ${response.status}`);
+                    }
+
+                    next();
+                  }}
+                />
               ) : (
                 <StepPayment data={form} onDone={() => setDone(true)} businessId={businessIdFromUrl} />
               )}

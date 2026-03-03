@@ -483,35 +483,39 @@ export default function Landing() {
             </h2>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {[
-              { step: "01", title: "Connect Google", desc: "Link your Google Business Profile in 60 seconds. We scan your presence and identify gaps." },
-              { step: "02", title: "Set your voice", desc: "Configure your tone and rules once. Solsara learns how you speak and responds as you." },
-              { step: "03", title: "Watch it grow", desc: "Reviews handled, search ranking rising, leads captured. You just check the dashboard." },
-            ].map((item) => (
-              <div
-                key={item.step}
-                className="relative rounded-2xl border border-black/[0.06] bg-[#f9fafb] p-7"
-              >
-                <span className="text-[11px] font-bold text-[#0055ff] tracking-widest mb-4 block">{item.step}</span>
-                <h3 className="text-[17px] font-bold text-black mb-2 tracking-tight">{item.title}</h3>
-                <p className="text-[13px] text-black/45 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
+          <div className="grid gap-8 md:grid-cols-3">
+            <div className="md:col-span-2 grid gap-6">
+              {[
+                { step: "01", title: "Connect Google", desc: "Link your Google Business Profile in 60 seconds. We scan your presence and identify gaps." },
+                { step: "02", title: "Set your voice", desc: "Configure your tone and rules once. Solsara learns how you speak and responds as you." },
+                { step: "03", title: "Watch it grow", desc: "Reviews handled, search ranking rising, leads captured. You just check the dashboard." },
+              ].map((item) => (
+                <div
+                  key={item.step}
+                  className="relative rounded-2xl border border-black/[0.06] bg-[#f9fafb] p-7"
+                >
+                  <span className="text-[11px] font-bold text-[#0055ff] tracking-widest mb-4 block">{item.step}</span>
+                  <h3 className="text-[17px] font-bold text-black mb-2 tracking-tight">{item.title}</h3>
+                  <p className="text-[13px] text-black/45 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
 
-          <div className="mt-10 rounded-2xl border border-[#0055ff]/15 bg-[#f4f7ff] px-6 py-5 text-left">
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#0055ff]">
-              What Solsara can access
-            </p>
-            <ul className="mt-2 space-y-1 text-[12px] text-black/70 leading-relaxed">
-              <li>• Your Google Business Profile reviews</li>
-              <li>• Permission to draft/post review replies</li>
-              <li>• Basic account identity (email) for login</li>
-            </ul>
-            <p className="mt-2 text-[11px] text-black/50">
-              No Gmail, Drive, or personal files. You can revoke access anytime in your Google Account.
-            </p>
+            <div className="md:col-span-1">
+              <div className="h-full rounded-2xl border border-[#0055ff]/20 bg-[#f4f7ff] px-7 py-7 text-left">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#0055ff]">
+                  What Solsara can access
+                </p>
+                <ul className="mt-3 space-y-2 text-[13px] text-black/75 leading-relaxed">
+                  <li>• Your Google Business Profile reviews</li>
+                  <li>• Permission to draft/post review replies</li>
+                  <li>• Basic account identity (email) for login</li>
+                </ul>
+                <p className="mt-4 text-[12px] text-black/55 leading-relaxed">
+                  No Gmail, Drive, or personal files. You can revoke access anytime in your Google Account.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

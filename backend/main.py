@@ -8,6 +8,7 @@ from .routers.webhooks import router as webhooks_router
 from .routers.checkout import router as checkout_router  # added
 from .routers.demo import router as demo_router
 from .routers.reviews import router as reviews_router
+from .routers.businesses import router as businesses_router
 from .scheduler import start_scheduler
 from .config import settings
 
@@ -33,6 +34,7 @@ app.include_router(webhooks_router)
 app.include_router(checkout_router)  # new
 app.include_router(demo_router)
 app.include_router(reviews_router)
+app.include_router(businesses_router)
 
 # Background scheduler
 

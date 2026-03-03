@@ -41,7 +41,9 @@ Business tone: {tone_description}
 Review from {req.reviewer_name} ({req.rating}/5 stars):
 "{req.review_text}"
 
-Write a response. Rules:
+Write a response that sounds like the owner personally wrote it at the end of a long day: genuine, warm, not trying too hard.
+
+Rules:
 - Sound human and genuine, not like a template
 - 2-3 sentences only
 - Thank the reviewer by name
@@ -49,6 +51,19 @@ Write a response. Rules:
 - For negative reviews, acknowledge the issue and invite them to reach out
 - Never use em dashes or AI-sounding formatting
 - Sound like the business owner wrote it, not a bot
+
+Never say any of these:
+- "Thank you for your feedback"
+- "We strive to"
+- "We apologize for any inconvenience"
+
+Never sound like a corporate PR statement.
+
+Good example:
+"James, this honestly made our morning. So glad you had a great experience. Hope to see you back soon!"
+
+Bad example:
+"Thank you for your positive review. We are pleased to hear about your experience."
 
 Return ONLY a JSON object: {{"response": "your response here"}}"""
 
