@@ -511,13 +511,30 @@ function StepVoice({
 /* ─── Step 3: Payment ────────────────────────────────────────── */
 function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () => void; businessId?: string | null }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleCheckout() {
+  async function handleCheckout() {
+    if (!businessId) return;
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const res = await fetch(`${backendUrl}/checkout/${businessId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        throw new Error(`Checkout failed: ${res.status}`);
+      }
+      const data = await res.json();
+      if (!data.url) {
+        throw new Error("Missing checkout URL");
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setError("Could not start checkout. Please try again.");
       setLoading(false);
-      onDone();
-    }, 2000);
+    }
   }
 
   return (
@@ -586,9 +603,15 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
       </div>
 
       {/* Stripe CTA */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
+          {error}
+        </div>
+      )}
+
       <button
         onClick={handleCheckout}
-        disabled={loading}
+        disabled={loading || !businessId}
         className="relative w-full overflow-hidden rounded-xl bg-[#0055ff] py-4 text-[14px] font-bold text-white transition-all duration-200 hover:bg-[#0044dd] hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70"
       >
         {loading ? (
@@ -603,6 +626,12 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
           "Start free trial → Pay $149/mo after 14 days"
         )}
       </button>
+
+      {!businessId && (
+        <p className="text-center text-[11px] text-black/35">
+          Connect Google first to start checkout.
+        </p>
+      )}
 
       <div className="flex items-center justify-center gap-4 text-[11px] text-black/25">
         <span className="flex items-center gap-1.5">
