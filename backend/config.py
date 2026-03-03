@@ -35,7 +35,10 @@ class Settings(BaseSettings):
 
     # Dev
     dev_mode: bool = True
-    allowed_origins: List[str] = ["http://localhost:3000"]
+    allowed_origins: List[str] = [
+        "http://localhost:3000",
+        "https://solsara.vercel.app",
+    ]
 
     class Config:
         env_file = str(_env_path) if _env_path.exists() else None
