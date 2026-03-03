@@ -115,10 +115,10 @@ const FEATURES = [
 const PRICING = [
     {
         label: "OS",
-        price: "$100",
+        price: "$99.99",
         period: "/mo",
         desc: "Review Automation + Reputation Dashboard. One location.",
-        fineprint: "14 days free, then $100/mo. Cancel anytime. No credit card required.",
+        fineprint: "14 days free, then $99.99/mo. Cancel anytime. No credit card required.",
         cta: "Start free trial",
         primary: true,
     },
@@ -402,7 +402,7 @@ export default function Landing() {
                         </h2>
                     </motion.div>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", justifyContent: "center" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", justifyContent: "center", width: "100%" }}>
                         {PRICING.map((plan, i) => (
                             <motion.div
                                 key={plan.label}
@@ -411,6 +411,7 @@ export default function Landing() {
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.4, delay: i * 0.06 }}
                                 style={{
+                                    margin: "0 auto",
                                     background: plan.primary ? "rgba(245, 166, 35, 0.06)" : "transparent",
                                     border: plan.primary ? "1px solid rgba(245, 166, 35, 0.25)" : "1px solid var(--border)",
                                     borderRadius: "16px",
