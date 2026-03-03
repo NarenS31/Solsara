@@ -369,34 +369,14 @@ function FeaturesBento() {
 /* ─── Pricing card ───────────────────────────────────────────── */
 const PLANS = [
   {
-    name: "OS Entry",
-    price: "$149",
+    name: "OS",
+    price: "$100",
     period: "/mo",
-    trialSubtext: "14 days free, then $149/mo. Cancel anytime. No credit card required.",
+    trialSubtext: "14 days free, then $100/mo. Cancel anytime. No credit card required.",
     desc: "Review Automation + Reputation Dashboard. One location.",
     cta: "Start free trial",
     primary: true,
     href: "/api/auth/google",
-  },
-  {
-    name: "OS Growth",
-    price: "$499",
-    period: "/mo",
-    trialSubtext: null,
-    desc: "Adds Review Velocity + Social Proof + Gemini Feeder.",
-    cta: "Coming soon",
-    primary: false,
-    href: "#",
-  },
-  {
-    name: "OS Full Stack",
-    price: "$799",
-    period: "/mo",
-    trialSubtext: null,
-    desc: "Everything. All 6 modules + Dedicated AI assistant.",
-    cta: "Coming soon",
-    primary: false,
-    href: "#",
   },
 ];
 
