@@ -431,17 +431,17 @@ export default function Landing() {
                                     <p style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.5", marginBottom: "24px", marginTop: 0 }}>{plan.fineprint}</p>
                                 )}
                                 <Link
-                                    href={plan.soon ? "#" : "/onboarding"}
+                                    href="/onboarding"
                                     style={{
                                         display: "block", textAlign: "center",
                                         padding: "12px 20px",
                                         background: plan.primary ? "var(--accent)" : "transparent",
-                                        color: plan.primary ? "#0a0a0a" : plan.soon ? "var(--text-muted)" : "var(--text-primary)",
+                                        color: plan.primary ? "#0a0a0a" : "var(--text-primary)",
                                         border: plan.primary ? "none" : "1px solid var(--border-hover)",
                                         borderRadius: "10px",
                                         fontFamily: "var(--font-display)", fontSize: "13px", fontWeight: "600",
                                         textDecoration: "none",
-                                        cursor: plan.soon ? "default" : "pointer",
+                                        cursor: "pointer",
                                         margin: "0 auto",
                                         maxWidth: "220px",
                                     }}
