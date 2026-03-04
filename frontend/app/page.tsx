@@ -252,8 +252,8 @@ function DashboardMockup() {
 /* ─── Features bento ─────────────────────────────────────────── */
 const COMING_SOON_MODULES = [
   {
-    name: "Local Dominance",
-    desc: "Keep your Google Business profile active with fresh signals to maintain a top ranking in the local map pack.",
+    name: "Map Pack Rankings",
+    desc: "Keep your Google Business profile active with fresh signals to rank higher in the local map pack.",
   },
   {
     name: "Missed Call Recovery",
