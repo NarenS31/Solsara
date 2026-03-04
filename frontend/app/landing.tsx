@@ -178,7 +178,7 @@ export default function Landing() {
                             marginBottom: "24px", display: "flex", alignItems: "center", gap: "12px",
                         }}>
                             <span style={{ display: "inline-block", width: "6px", height: "6px", background: "var(--accent)", borderRadius: "50%", animation: "pulse 2s infinite" }} />
-                            Reputation OS for Local Business
+                            Your reputation. Automated.
                         </motion.div>
 
                         <motion.h1 variants={FADE_UP} style={{
@@ -189,9 +189,9 @@ export default function Landing() {
                             marginBottom: "24px",
                             color: "#E8E4DC",
                         }}>
-                            More customers find you.<br />
-                            More trust you.<br />
-                            <span style={{ color: "#F5A623" }}>On autopilot.</span>
+                            Every review answered.<br />
+                            Every missed call followed up.<br />
+                            <span style={{ color: "#F5A623" }}>Automatically.</span>
                         </motion.h1>
 
                         <motion.p variants={FADE_UP} style={{
@@ -199,7 +199,7 @@ export default function Landing() {
                             lineHeight: "1.7", marginBottom: "40px",
                             maxWidth: "480px",
                         }}>
-                            Solsara is the operating system for your Google presence. We automate your reputation, dominate local search, and handle customer interaction—starting with 100% automated review replies.
+                            Solsara responds to every Google review in your voice, automatically, within 30 minutes. You never touch it.
                         </motion.p>
 
                         <motion.div variants={FADE_UP} style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
@@ -268,7 +268,7 @@ export default function Landing() {
                     <div style={{ display: "flex", alignItems: "stretch", justifyContent: "center", flexWrap: "wrap", gap: "0" }}>
                         {[
                             { step: 1, title: "Connect Google", desc: "Link your Google Business Profile in 60 seconds. Solsara scans your presence and identifies growth gaps." },
-                            { step: 2, title: "Activate Modules", desc: "Configure your voice and rules for Review Automation. One switch to start dominating your local area." },
+                            { step: 2, title: "Activate Modules", desc: "Configure your voice and rules for Review Automation. One switch to start ranking higher on Google Maps." },
                             { step: 3, title: "Growth Autopilot", desc: "Solsara handles the heavy lifting—reviews, search ranking, and lead capture. You just watch the dashboard." },
                         ].map((item, i) => (
                             <div key={item.step} style={{ display: "flex", alignItems: "stretch" }}>
