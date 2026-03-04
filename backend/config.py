@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     # Email
     resend_api_key: str = ""
 
+    # Twilio
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+
     # Dev
     dev_mode: bool = True
     allowed_origins: List[str] = [

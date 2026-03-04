@@ -1,4 +1,5 @@
 # backend/main.py
+from routers.calls import router as calls_router
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,8 +21,11 @@ logging.basicConfig(
 )
 
 # CORS for frontend
+
+
 def _normalize_origin(origin: str) -> str:
     return origin.rstrip("/")
+
 
 cors_origins = {
     _normalize_origin(o) for o in [*settings.allowed_origins, settings.frontend_url]
@@ -101,6 +105,8 @@ def test_poll():
         print(tb)  # prints full error to console
         return {"error": str(e), "trace": tb}
 
+
+app.include_router(calls_router)
 # Ping endpoint
 
 
