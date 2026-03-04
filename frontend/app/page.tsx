@@ -403,7 +403,7 @@ export default function Landing() {
           <motion.div variants={fadeUp} className="mb-7">
             <span className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-black/50 shadow-sm backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-[#0055ff] animate-pulse" />
-              Reputation OS — Live Now
+              Your reputation. Automated.
             </span>
           </motion.div>
 
@@ -412,8 +412,9 @@ export default function Landing() {
             variants={fadeUp}
             className="max-w-[820px] text-[42px] font-black leading-[1.06] tracking-[-0.04em] text-black md:text-[72px]"
           >
-            Run your Google presence <br className="hidden md:block" />
-            like a <span className="text-[#0055ff]">pro.</span>
+            Every review answered.<br className="hidden md:block" />
+            Every missed call followed up.<br className="hidden md:block" />
+            <span className="text-[#0055ff]">Automatically.</span>
           </motion.h1>
 
           {/* Sub */}
@@ -421,7 +422,7 @@ export default function Landing() {
             variants={fadeUp}
             className="mt-6 max-w-[540px] text-[15px] font-medium leading-relaxed text-black/50 md:text-[17px]"
           >
-            The all-in-one reputation operating system for local business. Automate reviews, dominate search, and grow—on autopilot.
+            Solsara responds to every Google review in your voice, automatically, within 30 minutes. You never touch it.
           </motion.p>
 
           {/* CTAs */}
