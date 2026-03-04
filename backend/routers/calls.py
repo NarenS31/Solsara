@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import Response
-from db import supabase
-from services.twilio_service import (
+from ..db import supabase
+from ..services.twilio_service import (
     provision_number,
     release_number,
     send_missed_call_sms,
