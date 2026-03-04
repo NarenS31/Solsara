@@ -386,15 +386,19 @@ export default function Landing() {
                 {/* PRICING - clean */}
                 <section id="pricing" style={{
                     padding: "100px clamp(24px, 6vw, 80px)",
-                    width: "100%", maxWidth: "100%",
+                    width: "100%",
+                    maxWidth: "100%",
                     borderTop: "1px solid var(--border)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
                 }}>
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.4 }}
-                        style={{ marginBottom: "48px" }}
+                        style={{ marginBottom: "48px", textAlign: "center", width: "100%", maxWidth: "720px" }}
                     >
                         <div className="section-label">Pricing</div>
                         <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px, 3.5vw, 36px)", fontWeight: "700", letterSpacing: "-0.03em", color: "var(--text-primary)" }}>
@@ -402,7 +406,7 @@ export default function Landing() {
                         </h2>
                     </motion.div>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", justifyContent: "center", width: "100%" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", justifyContent: "center", width: "100%", maxWidth: "720px", margin: "0 auto" }}>
                         {PRICING.map((plan, i) => (
                             <motion.div
                                 key={plan.label}
