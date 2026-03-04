@@ -1,7 +1,7 @@
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse, Dial
-from config import settings
-from db import supabase
+from ..config import settings
+from ..db import supabase
 
 # creates one Twilio client the whole app shares
 twilio_client = Client(settings.twilio_account_sid, settings.twilio_auth_token)

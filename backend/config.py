@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # Twilio
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
+    railway_url: str = ""
 
     # Dev
     dev_mode: bool = True
