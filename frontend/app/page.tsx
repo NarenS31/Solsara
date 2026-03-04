@@ -370,9 +370,9 @@ function FeaturesBento() {
 const PLANS = [
   {
     name: "OS",
-    price: "$100",
+    price: "$99.99",
     period: "/mo",
-    trialSubtext: "14 days free, then $100/mo. Cancel anytime. No credit card required.",
+    trialSubtext: "14 days free, then $99.99/mo. Cancel anytime. No credit card required.",
     desc: "Review Automation + Reputation Dashboard. One location.",
     cta: "Start free trial",
     primary: true,
@@ -516,12 +516,12 @@ export default function Landing() {
               </h2>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-1 place-items-center">
               {PLANS.map((plan) => (
                 <div
                   key={plan.name}
                   className={cn(
-                    "flex flex-col rounded-2xl border p-7",
+                    "flex w-full max-w-md flex-col rounded-2xl border p-7",
                     plan.primary
                       ? "border-[#0055ff]/25 bg-white shadow-[0_4px_32px_rgba(0,85,255,0.1)]"
                       : "border-black/[0.06] bg-white"

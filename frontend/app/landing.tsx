@@ -406,7 +406,7 @@ export default function Landing() {
                         </h2>
                     </motion.div>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", justifyContent: "center", width: "100%", maxWidth: "720px", margin: "0 auto" }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "24px", justifyContent: "center", width: "100%", maxWidth: "100%", margin: "0 auto" }}>
                         {PRICING.map((plan, i) => (
                             <motion.div
                                 key={plan.label}
@@ -421,7 +421,7 @@ export default function Landing() {
                                     borderRadius: "16px",
                                     padding: "32px 36px",
                                     minWidth: "240px",
-                                    maxWidth: "280px",
+                                    maxWidth: "320px",
                                 }}
                             >
                                 <div style={{ fontFamily: "var(--font-display)", fontSize: "12px", fontWeight: "600", color: plan.primary ? "var(--accent)" : "var(--text-muted)", letterSpacing: "0.04em", marginBottom: "16px" }}>
