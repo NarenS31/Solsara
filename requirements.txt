@@ -69,3 +69,4 @@ anthropic
 stripe
 resend
 apscheduler
+twilio
