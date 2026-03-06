@@ -1,4 +1,5 @@
 import json
+from typing import List, Optional
 from anthropic import Anthropic
 from ..config import settings
 
@@ -10,7 +11,8 @@ def generate_response(
     reviewer_name: str,
     rating: int,
     business_name: str,
-    tone_description: str
+    tone_description: str,
+    previous_responses: Optional[List[str]] = None
 ) -> dict:
     # --- OpenAI version (commented out) ---
     # from openai import OpenAI
@@ -105,6 +107,15 @@ Confidence should be between 0 and 1. Use lower confidence (below 0.7) if:
 - The review is vague and hard to respond to meaningfully
 - You're unsure how to handle the tone
 - The review contains unusual claims"""
+
+    if previous_responses:
+        cleaned = [r.strip() for r in previous_responses if r and r.strip()]
+        if cleaned:
+            prompt += f"""
+
+Here are some real responses this business has posted before —
+match this voice exactly:
+{chr(10).join(cleaned)}"""
 
     result = client.messages.create(
         model="claude-sonnet-4-5",

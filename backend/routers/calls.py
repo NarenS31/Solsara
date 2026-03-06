@@ -9,8 +9,22 @@ from ..services.twilio_service import (
     build_forward_twiml
 )
 from datetime import datetime, timezone
+import re
 
 router = APIRouter()
+
+
+def _normalize_us_number(value: str) -> str:
+    if not value:
+        return ""
+    digits = re.sub(r"\D", "", value)
+    if digits.startswith("1") and len(digits) == 11:
+        return f"+{digits}"
+    if len(digits) == 10:
+        return f"+1{digits}"
+    if value.startswith("+") and len(digits) >= 10:
+        return f"+{digits}"
+    raise HTTPException(status_code=400, detail="Invalid phone number format")
 
 
 @router.post("/calls/incoming")
@@ -92,6 +106,12 @@ async def call_status(request: Request):
         )
 
     missed_call_id = missed_call.data[0]["id"]
+
+    if business.get("missed_call_paused"):
+        return Response(
+            content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
+            media_type="application/xml"
+        )
 
     # gets the business's custom message if they set one
     custom_message = business.get("missed_call_message")
@@ -179,6 +199,28 @@ async def provision_business_number(business_id: str, request: Request):
     if not real_number:
         raise HTTPException(status_code=400, detail="real_number is required")
 
+    real_number = _normalize_us_number(real_number)
+
+    try:
+        twilio_number = provision_number(business_id, real_number)
+        return {
+            "message": "Number provisioned successfully",
+            "twilio_number": twilio_number
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/calls/provision")
+async def provision_business_number_query(business_id: str, request: Request):
+    body = await request.json()
+    real_number = body.get("real_number")
+
+    if not real_number:
+        raise HTTPException(status_code=400, detail="real_number is required")
+
+    real_number = _normalize_us_number(real_number)
+
     try:
         twilio_number = provision_number(business_id, real_number)
         return {
@@ -225,6 +267,15 @@ async def get_missed_calls(business_id: str):
     return {"missed_calls": result.data}
 
 
+@router.get("/calls/missed")
+async def get_missed_calls_query(business_id: str):
+    result = supabase.table("missed_calls").select("*").eq(
+        "business_id", business_id
+    ).order("called_at", desc=True).limit(50).execute()
+
+    return {"missed_calls": result.data}
+
+
 @router.post("/calls/message/{business_id}")
 async def update_missed_call_message(business_id: str, request: Request):
     # lets the business owner customize their missed call SMS
@@ -243,3 +294,82 @@ async def update_missed_call_message(business_id: str, request: Request):
     }).eq("id", business_id).execute()
 
     return {"message": "Custom message updated"}
+
+
+@router.post("/calls/message")
+async def update_missed_call_message_query(business_id: str, request: Request):
+    body = await request.json()
+    message = body.get("message")
+
+    if not message:
+        raise HTTPException(status_code=400, detail="message is required")
+
+    if len(message) > 160:
+        raise HTTPException(
+            status_code=400, detail="Message must be under 160 characters")
+
+    supabase.table("businesses").update({
+        "missed_call_message": message
+    }).eq("id", business_id).execute()
+
+    return {"message": "Custom message updated"}
+
+
+@router.get("/calls/settings")
+async def get_missed_call_settings(business_id: str):
+    result = supabase.table("businesses").select(
+        "twilio_number,real_number,missed_call_message,missed_call_paused"
+    ).eq("id", business_id).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="business not found")
+
+    return {"settings": result.data[0]}
+
+
+@router.post("/calls/pause")
+async def pause_missed_call_net(business_id: str, request: Request):
+    body = await request.json()
+    paused = bool(body.get("paused", False))
+
+    supabase.table("businesses").update({
+        "missed_call_paused": paused
+    }).eq("id", business_id).execute()
+
+    return {"paused": paused}
+
+
+@router.post("/calls/test")
+async def send_test_message(business_id: str, request: Request):
+    body = await request.json()
+    to_number = body.get("to_number")
+
+    if not to_number:
+        raise HTTPException(status_code=400, detail="to_number is required")
+
+    to_number = _normalize_us_number(to_number)
+
+    result = supabase.table("businesses").select(
+        "twilio_number,missed_call_message,name"
+    ).eq("id", business_id).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="business not found")
+
+    business = result.data[0]
+    twilio_number = business.get("twilio_number")
+    if not twilio_number:
+        raise HTTPException(
+            status_code=400, detail="Twilio number not provisioned")
+
+    try:
+        send_missed_call_sms(
+            to_number=to_number,
+            from_number=twilio_number,
+            business_name=business.get("name", "us"),
+            custom_message=business.get("missed_call_message")
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"message": "Test message sent"}

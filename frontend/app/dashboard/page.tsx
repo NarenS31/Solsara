@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 const NAV_ITEMS = [
   { id: "reviews",      label: "Review Replies",   icon: "◈" },
   { id: "velocity",     label: "Review Velocity",   icon: "◎", soon: true },
-  { id: "missed",       label: "Missed Call Net",   icon: "⌁", soon: true },
+  { id: "missed",       label: "Missed Call Net",   icon: "⌁" },
   { id: "gemini",       label: "Gemini Feeder",     icon: "◇", soon: true },
   { id: "social",       label: "Social Proof",      icon: "▣", soon: true },
   { id: "receptionist", label: "Text Receptionist", icon: "⊡", soon: true },
@@ -78,6 +78,21 @@ function DashboardContent() {
   const [activeNav, setActiveNav] = useState("reviews");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
+  const [smsSetupComplete, setSmsSetupComplete] = useState(false);
+  const [smsStep, setSmsStep] = useState(1);
+  const [businessPhone, setBusinessPhone] = useState("");
+  const [defaultMessage, setDefaultMessage] = useState(
+    "Hey — thanks for calling. We missed you. Reply here and we’ll get you scheduled."
+  );
+  const [testNumber, setTestNumber] = useState("");
+  const [smsPaused, setSmsPaused] = useState(false);
+  const [missedLogs, setMissedLogs] = useState<any[]>([]);
+  const [missedError, setMissedError] = useState<string | null>(null);
+  const [loadingMissed, setLoadingMissed] = useState(false);
+  const [twilioNumber, setTwilioNumber] = useState("");
+  const [smsActionLoading, setSmsActionLoading] = useState(false);
+
+  const smsCharCount = defaultMessage.length;
 
   // Fetch reviews from backend API
   useEffect(() => {
@@ -129,6 +144,54 @@ function DashboardContent() {
 
     fetchReviews();
   }, [businessId]);
+
+  useEffect(() => {
+    if (activeNav !== "missed" || !businessId) return;
+
+    const fetchMissed = async () => {
+      try {
+        setLoadingMissed(true);
+        setMissedError(null);
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+        const [settingsRes, logsRes] = await Promise.all([
+          fetch(`${backendUrl}/calls/settings?business_id=${businessId}`),
+          fetch(`${backendUrl}/calls/missed?business_id=${businessId}`),
+        ]);
+
+        if (!settingsRes.ok) {
+          throw new Error(`Settings error: ${settingsRes.status}`);
+        }
+        if (!logsRes.ok) {
+          throw new Error(`Logs error: ${logsRes.status}`);
+        }
+
+        const settingsData = await settingsRes.json();
+        const logsData = await logsRes.json();
+
+        const settings = settingsData.settings || {};
+        setTwilioNumber(settings.twilio_number || "");
+        setBusinessPhone(settings.real_number || "");
+        setDefaultMessage(settings.missed_call_message || defaultMessage);
+        setSmsPaused(!!settings.missed_call_paused);
+        setSmsSetupComplete(!!settings.twilio_number && !!settings.real_number);
+
+        const normalizedLogs = (logsData.missed_calls || []).map((log: any) => ({
+          id: log.id,
+          number: log.caller_number || "Unknown",
+          time: log.called_at ? new Date(log.called_at).toLocaleString() : "Unknown",
+          sent: !!log.sms_sent,
+        }));
+        setMissedLogs(normalizedLogs);
+      } catch (err) {
+        setMissedError(err instanceof Error ? err.message : "Failed to load Missed Call Net");
+      } finally {
+        setLoadingMissed(false);
+      }
+    };
+
+    fetchMissed();
+  }, [activeNav, businessId]);
 
   const posted = reviews.filter((r) => r.status === "posted").length;
   const held = reviews.filter((r) => r.status === "held").length;
@@ -233,9 +296,17 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[22px] font-black tracking-[-0.03em] text-black">Review Replies</h1>
+            <h1 className="text-[22px] font-black tracking-[-0.03em] text-black">
+              {activeNav === "missed" ? "Missed Call Net" : "Review Replies"}
+            </h1>
             <p className="mt-1 text-[12px] font-medium text-black/40">
-              {loading ? "Loading..." : error ? "Connection issue" : "Monitoring · Auto-responding · 24/7"}
+              {activeNav === "missed"
+                ? "Auto-texts every missed caller · Set once, runs forever"
+                : loading
+                ? "Loading..."
+                : error
+                ? "Connection issue"
+                : "Monitoring · Auto-responding · 24/7"}
             </p>
           </div>
           <Button
@@ -247,7 +318,7 @@ function DashboardContent() {
         </div>
 
         {/* Loading state */}
-        {loading && !businessId && (
+        {activeNav === "reviews" && loading && !businessId && (
           <div className="rounded-xl border border-black/[0.06] bg-white p-12 text-center">
             <div className="inline-flex h-8 w-8 animate-spin rounded-full border-2 border-black/20 border-t-[#0055ff] mb-4" />
             <p className="text-[13px] font-medium text-black/40">Loading your reviews...</p>
@@ -255,7 +326,7 @@ function DashboardContent() {
         )}
 
         {/* Error state */}
-        {error && businessId && (
+        {activeNav === "reviews" && error && businessId && (
           <div className="rounded-xl border border-red-100 bg-red-50 p-6 mb-8">
             <p className="text-[13px] font-medium text-red-700">
               ⚠️ Failed to load reviews: {error}
@@ -267,7 +338,7 @@ function DashboardContent() {
         )}
 
         {/* No business ID state */}
-        {!businessId && !loading && (
+        {activeNav === "reviews" && !businessId && !loading && (
           <div className="rounded-xl border border-amber-100 bg-amber-50 p-6 mb-8">
             <p className="text-[13px] font-medium text-amber-700">
               📋 No business selected
@@ -284,7 +355,7 @@ function DashboardContent() {
         )}
 
         {/* Empty state */}
-        {!loading && businessId && reviews.length === 0 && (
+        {activeNav === "reviews" && !loading && businessId && reviews.length === 0 && (
           <div className="rounded-xl border border-black/[0.06] bg-white p-12 text-center">
             <div className="text-[32px] mb-3">📭</div>
             <p className="text-[14px] font-semibold text-black">No reviews yet</p>
@@ -302,7 +373,7 @@ function DashboardContent() {
         )}
 
         {/* Content sections (only show if we have data) */}
-        {!loading && reviews.length > 0 && (
+        {activeNav === "reviews" && !loading && reviews.length > 0 && (
           <>
         {/* Stats */}
         <div className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -481,6 +552,299 @@ function DashboardContent() {
           </div>
         </section>
           </>
+        )}
+
+        {/* Missed Call Net module */}
+        {activeNav === "missed" && (
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            {/* Left: Setup wizard / status */}
+            <div className="space-y-4">
+              {missedError && (
+                <div className="rounded-xl border border-red-100 bg-red-50 p-4 text-[12px] font-medium text-red-700">
+                  ⚠️ {missedError}
+                </div>
+              )}
+              {loadingMissed && (
+                <div className="rounded-xl border border-black/[0.06] bg-white p-4 text-[12px] font-medium text-black/40">
+                  Loading Missed Call Net...
+                </div>
+              )}
+              {!smsSetupComplete ? (
+                <div className="rounded-xl border border-black/[0.06] bg-white p-6 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/30">Setup wizard</p>
+                      <h2 className="mt-1 text-[16px] font-bold text-black">Set it once. Never touch it again.</h2>
+                    </div>
+                    <span className="rounded-full bg-black/[0.05] px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-black/40">
+                      Step {smsStep} of 3
+                    </span>
+                  </div>
+
+                  {smsStep === 1 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[13px] font-semibold text-black">
+                          What’s your current business phone number? We’ll buy you a local number in the same area code.
+                        </p>
+                        <input
+                          className="mt-3 w-full rounded-xl border border-black/[0.09] bg-[#f9fafb] px-4 py-3 text-[14px] font-medium text-black outline-none placeholder:text-black/30 focus:border-[#0055ff]/40 focus:bg-white focus:ring-2 focus:ring-[#0055ff]/10"
+                          placeholder="(704) 555-0123"
+                          value={businessPhone}
+                          onChange={(e) => setBusinessPhone(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          if (!businessId) return;
+                          try {
+                            setSmsActionLoading(true);
+                            setMissedError(null);
+                            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                            const res = await fetch(`${backendUrl}/calls/provision?business_id=${businessId}`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ real_number: businessPhone }),
+                            });
+                            if (!res.ok) {
+                              throw new Error(`Provision failed: ${res.status}`);
+                            }
+                            const data = await res.json();
+                            setTwilioNumber(data.twilio_number || "");
+                            setSmsStep(2);
+                          } catch (err) {
+                            setMissedError(err instanceof Error ? err.message : "Failed to provision number");
+                          } finally {
+                            setSmsActionLoading(false);
+                          }
+                        }}
+                        disabled={!businessPhone.trim() || smsActionLoading}
+                        className="h-10 w-full rounded-lg bg-black text-[12px] font-semibold text-white hover:bg-black/85 disabled:opacity-50"
+                      >
+                        {smsActionLoading ? "Provisioning..." : "Continue →"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {smsStep === 2 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[13px] font-semibold text-black">Customize your message</p>
+                        <Textarea
+                          value={defaultMessage}
+                          onChange={(e) => setDefaultMessage(e.target.value.slice(0, 160))}
+                          className="mt-3 min-h-[110px] resize-none border-black/[0.08] bg-[#f9fafb] text-[13px] text-black placeholder:text-black/25 focus-visible:ring-[#0055ff]/20"
+                        />
+                        <div className="mt-2 flex items-center justify-between text-[11px] text-black/35">
+                          <span>Characters</span>
+                          <span className={cn("font-semibold", smsCharCount > 160 ? "text-red-500" : "text-black/60")}>
+                            {smsCharCount}/160
+                          </span>
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-black/[0.06] bg-[#f9fafb] p-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/30">Live preview</p>
+                        <div className="mt-2 rounded-lg bg-white px-3 py-2.5 text-[12px] text-black/70 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
+                          {defaultMessage || "Your message preview will appear here."}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setSmsStep(1)}
+                          className="h-10 flex-1 rounded-lg border-black/[0.08] text-[12px] font-semibold text-black/50 hover:text-black"
+                        >
+                          Back
+                        </Button>
+                        <Button
+                          onClick={async () => {
+                            if (!businessId) return;
+                            try {
+                              setSmsActionLoading(true);
+                              setMissedError(null);
+                              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                              const res = await fetch(`${backendUrl}/calls/message?business_id=${businessId}`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ message: defaultMessage }),
+                              });
+                              if (!res.ok) {
+                                throw new Error(`Message update failed: ${res.status}`);
+                              }
+                              setSmsStep(3);
+                            } catch (err) {
+                              setMissedError(err instanceof Error ? err.message : "Failed to save message");
+                            } finally {
+                              setSmsActionLoading(false);
+                            }
+                          }}
+                          className="h-10 flex-1 rounded-lg bg-black text-[12px] font-semibold text-white hover:bg-black/85"
+                        >
+                          {smsActionLoading ? "Saving..." : "Continue →"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {smsStep === 3 && (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-[13px] font-semibold text-black">
+                          Enter your personal number to receive a test message right now.
+                        </p>
+                        <input
+                          className="mt-3 w-full rounded-xl border border-black/[0.09] bg-[#f9fafb] px-4 py-3 text-[14px] font-medium text-black outline-none placeholder:text-black/30 focus:border-[#0055ff]/40 focus:bg-white focus:ring-2 focus:ring-[#0055ff]/10"
+                          placeholder="(704) 555-0170"
+                          value={testNumber}
+                          onChange={(e) => setTestNumber(e.target.value)}
+                        />
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          if (!businessId) return;
+                          try {
+                            setSmsActionLoading(true);
+                            setMissedError(null);
+                            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                            const res = await fetch(`${backendUrl}/calls/test?business_id=${businessId}`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ to_number: testNumber }),
+                            });
+                            if (!res.ok) {
+                              throw new Error(`Test SMS failed: ${res.status}`);
+                            }
+                            setSmsSetupComplete(true);
+                          } catch (err) {
+                            setMissedError(err instanceof Error ? err.message : "Failed to send test message");
+                          } finally {
+                            setSmsActionLoading(false);
+                          }
+                        }}
+                        disabled={!testNumber.trim() || smsActionLoading}
+                        className="h-10 w-full rounded-lg bg-[#0055ff] text-[12px] font-semibold text-white hover:bg-[#0044dd] disabled:opacity-50"
+                      >
+                        {smsActionLoading ? "Sending..." : "Send test message & finish setup"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setSmsStep(2)}
+                        className="h-10 w-full rounded-lg border-black/[0.08] text-[12px] font-semibold text-black/50 hover:text-black"
+                      >
+                        Back
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-black/[0.06] bg-white p-6 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/30">Live</p>
+                      <h2 className="mt-1 text-[16px] font-bold text-black">Missed Call Net is active</h2>
+                      <p className="mt-1 text-[12px] text-black/45">Set once. It runs forever.</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (!businessId) return;
+                        try {
+                          setSmsActionLoading(true);
+                          setMissedError(null);
+                          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                          const nextPaused = !smsPaused;
+                          const res = await fetch(`${backendUrl}/calls/pause?business_id=${businessId}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ paused: nextPaused }),
+                          });
+                          if (!res.ok) {
+                            throw new Error(`Pause toggle failed: ${res.status}`);
+                          }
+                          setSmsPaused(nextPaused);
+                        } catch (err) {
+                          setMissedError(err instanceof Error ? err.message : "Failed to update pause state");
+                        } finally {
+                          setSmsActionLoading(false);
+                        }
+                      }}
+                      disabled={smsActionLoading}
+                      className={cn(
+                        "rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider disabled:opacity-50",
+                        smsPaused
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-emerald-50 text-emerald-700"
+                      )}
+                    >
+                      {smsPaused ? "Paused" : "Running"}
+                    </button>
+                  </div>
+
+                  <div className="mt-5 rounded-lg border border-black/[0.06] bg-[#f9fafb] p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/30">Your Solsara number</p>
+                    <div className="mt-2 text-[18px] font-black text-black">{twilioNumber}</div>
+                    <p className="mt-1 text-[11px] text-black/40">Use this on Google so missed callers get an instant text.</p>
+                  </div>
+
+                  <div className="mt-5">
+                    <div className="mb-2 flex items-center justify-between">
+                      <h3 className="text-[12px] font-bold text-black">Missed calls</h3>
+                      <span className="text-[10px] font-semibold text-black/35">Last 7 days</span>
+                    </div>
+                    <div className="space-y-2">
+                      {missedLogs.map((log) => (
+                        <div
+                          key={log.id}
+                          className="flex items-center justify-between rounded-lg border border-black/[0.06] bg-white px-3 py-2"
+                        >
+                          <div>
+                            <div className="text-[12px] font-semibold text-black">{log.number}</div>
+                            <div className="text-[10px] text-black/35">{log.time}</div>
+                          </div>
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider",
+                              log.sent ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                            )}
+                          >
+                            {log.sent ? "SMS sent" : "Paused"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Summary */}
+            <div className="space-y-4">
+              <div className="rounded-xl border border-black/[0.06] bg-white p-6 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/30">How it works</p>
+                <ol className="mt-3 space-y-3 text-[13px] text-black/60">
+                  <li className="flex gap-2">
+                    <span className="text-black/30">1.</span>
+                    A caller hits voicemail.
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-black/30">2.</span>
+                    Solsara auto-texts them your message.
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-black/30">3.</span>
+                    They reply, and you convert the lead.
+                  </li>
+                </ol>
+              </div>
+
+              <div className="rounded-xl border border-black/[0.06] bg-white p-6 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-black/30">Message preview</p>
+                <div className="mt-3 rounded-lg bg-[#f9fafb] p-4 text-[12px] text-black/70">
+                  {defaultMessage || "Your default message will appear here."}
+                </div>
+                <p className="mt-2 text-[11px] text-black/35">Keep it short and human — under 160 characters.</p>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>

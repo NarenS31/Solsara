@@ -14,6 +14,7 @@ interface FormData {
   googleConnected: boolean;
   googleBusiness: string;
   voice: string;
+  businessDescription: string;
   neverSay: string;
   exampleResponse: string;
 }
@@ -249,7 +250,7 @@ function StepVoice({
 }: {
   data: FormData;
   onChange: (k: keyof FormData, v: string) => void;
-  onNext: () => Promise<void>;
+  onNext: (customRules: string[]) => Promise<void>;
 }) {
   const VOICE_OPTIONS = [
     { id: "warm",         label: "Calm & warm",       desc: "Like talking to a friend you trust" },
@@ -288,7 +289,8 @@ function StepVoice({
     setSaving(true);
     setSaveError("");
     try {
-      await onNext();
+      const customRules = rules.filter((r) => !r.locked).map((r) => r.text);
+      await onNext(customRules);
     } catch {
       setSaveError("Could not save your voice. Please try again.");
     } finally {
@@ -305,7 +307,21 @@ function StepVoice({
         </p>
       </div>
 
-      {/* Q1 — Voice */}
+      {/* Q1 — Business description */}
+      <div className="space-y-1.5">
+        <label className="block text-[13px] font-bold text-black">
+          Describe your business in one sentence like you're telling a friend
+          <span className="font-normal text-black/30"> (optional)</span>
+        </label>
+        <textarea
+          className={cn(inputCls, "min-h-[80px] resize-none")}
+          placeholder="e.g. We’re a family-owned HVAC company in Charlotte, 22 years in, and we talk to customers like neighbors."
+          value={data.businessDescription}
+          onChange={(e) => onChange("businessDescription", e.target.value)}
+        />
+      </div>
+
+      {/* Q2 — Voice */}
       <div className="space-y-2">
         <label className="block text-[13px] font-bold text-black">
           How would you describe your brand voice?
@@ -358,29 +374,29 @@ function StepVoice({
         </div>
       </div>
 
-      {/* Q2 — Never say */}
+      {/* Q3 — Never say */}
       <div className="space-y-1.5">
         <label className="block text-[13px] font-bold text-black">
-          Anything we should never say?{" "}
+          What words would you never use when talking to customers?{" "}
           <span className="font-normal text-black/30">(optional)</span>
         </label>
         <input
           className={inputCls}
-          placeholder="e.g. Don't mention competitors, avoid sounding corporate..."
+          placeholder="e.g. never say ‘synergy’, avoid corporate-speak, don't mention competitors"
           value={data.neverSay}
           onChange={(e) => onChange("neverSay", e.target.value)}
         />
       </div>
 
-      {/* Q3 — Example */}
+      {/* Q4 — Example */}
       <div className="space-y-1.5">
         <label className="block text-[13px] font-bold text-black">
-          Paste a response you love{" "}
+          Paste an example of how you'd respond to a great review{" "}
           <span className="font-normal text-black/30">(optional)</span>
         </label>
         <textarea
           className={cn(inputCls, "min-h-[80px] resize-none")}
-          placeholder="Something you've written before that sounded exactly right..."
+          placeholder="A real response you wrote that felt perfect..."
           value={data.exampleResponse}
           onChange={(e) => onChange("exampleResponse", e.target.value)}
         />
@@ -710,6 +726,7 @@ function OnboardingContent() {
     googleConnected: !!businessIdFromUrl,
     googleBusiness: businessIdFromUrl ? "Connected" : "",
     voice: "",
+    businessDescription: "",
     neverSay: "",
     exampleResponse: "",
   });
@@ -818,7 +835,7 @@ function OnboardingContent() {
                 <StepVoice
                   data={form}
                   onChange={update}
-                  onNext={async () => {
+                  onNext={async (customRules) => {
                     if (!businessIdFromUrl) {
                       next();
                       return;
@@ -830,8 +847,10 @@ function OnboardingContent() {
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
                         voice: form.voice,
+                        business_description: form.businessDescription,
                         never_say: form.neverSay,
                         example_response: form.exampleResponse,
+                        custom_rules: customRules,
                       }),
                     });
 

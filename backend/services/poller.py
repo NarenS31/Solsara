@@ -4,6 +4,22 @@ from .llm import generate_response
 from .guardrails import check_guardrails
 
 
+def _get_recent_responses(business_id: str, limit: int = 5) -> list:
+    result = supabase.table("response_queue").select(
+        "final_response,generated_response,posted_at"
+    ).eq("business_id", business_id).eq("status", "posted").order(
+        "posted_at", desc=True
+    ).limit(limit).execute()
+
+    responses = []
+    for row in result.data or []:
+        text = (row.get("final_response") or row.get(
+            "generated_response") or "").strip()
+        if text:
+            responses.append(text)
+    return responses
+
+
 def poll_all_businesses():
     # fetch all active businesses
     result = supabase.table("businesses").select(
@@ -33,7 +49,8 @@ def poll_all_businesses():
                 rating=4,
                 business_name=business["name"],
                 tone_description=business.get(
-                    "tone_description", "professional and friendly")
+                    "tone_description", "professional and friendly"),
+                previous_responses=_get_recent_responses(business["id"])
             )
 
             details.append({
@@ -143,7 +160,8 @@ def process_review(business: dict, review: dict):
         reviewer_name=reviewer_name,
         rating=rating,
         business_name=business_name,
-        tone_description=tone
+        tone_description=tone,
+        previous_responses=_get_recent_responses(business["id"])
     )
 
     # Guardrails check

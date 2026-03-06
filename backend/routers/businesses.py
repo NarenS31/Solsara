@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from typing import List
 
 from ..db import supabase
 
@@ -15,17 +16,32 @@ TONE_MAP = {
 
 class ToneUpdateRequest(BaseModel):
     voice: str
+    business_description: str = ""
     never_say: str = ""
     example_response: str = ""
+    custom_rules: List[str] = []
 
 
-def build_tone_description(voice: str, never_say: str, example_response: str) -> str:
+def build_tone_description(
+    voice: str,
+    business_description: str,
+    never_say: str,
+    example_response: str,
+    custom_rules: List[str]
+) -> str:
     base = TONE_MAP.get(voice, TONE_MAP["professional"])
     extras = []
+    if business_description.strip():
+        extras.append(f"Business description: {business_description.strip()}")
     if never_say.strip():
         extras.append(f"Never say: {never_say.strip()}")
     if example_response.strip():
         extras.append(f"Example to emulate: {example_response.strip()}")
+    if custom_rules:
+        formatted = "\n".join(
+            f"- {r.strip()}" for r in custom_rules if r and r.strip())
+        if formatted:
+            extras.append("Additional rules:\n" + formatted)
     if extras:
         return base + "\n\n" + "\n".join(extras)
     return base
@@ -34,7 +50,11 @@ def build_tone_description(voice: str, never_say: str, example_response: str) ->
 @router.post("/{business_id}/tone")
 def update_business_tone(business_id: str, payload: ToneUpdateRequest):
     tone_description = build_tone_description(
-        payload.voice, payload.never_say, payload.example_response
+        payload.voice,
+        payload.business_description,
+        payload.never_say,
+        payload.example_response,
+        payload.custom_rules
     )
 
     result = supabase.table("businesses").update({
