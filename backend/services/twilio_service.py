@@ -8,6 +8,8 @@ twilio_client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
 
 
 def provision_number(business_id: str, real_number: str) -> str:
+    if not settings.railway_url:
+        raise Exception("Missing RAILWAY_URL env var for Twilio webhooks")
     # extracts area code from their real number
     # real_number format: +17045551234
     area_code = real_number[2:5]

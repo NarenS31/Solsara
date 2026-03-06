@@ -645,7 +645,14 @@ function DashboardContent() {
                               body: JSON.stringify({ real_number: businessPhone }),
                             });
                             if (!res.ok) {
-                              throw new Error(`Provision failed: ${res.status}`);
+                              let detail = "";
+                              try {
+                                const errData = await res.json();
+                                detail = errData.detail ? `: ${errData.detail}` : "";
+                              } catch {
+                                // ignore parse errors
+                              }
+                              throw new Error(`Provision failed: ${res.status}${detail}`);
                             }
                             const data = await res.json();
                             setTwilioNumber(data.twilio_number || "");
