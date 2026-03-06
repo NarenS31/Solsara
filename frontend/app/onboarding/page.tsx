@@ -667,7 +667,8 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
 }
 
 /* ─── Done screen ────────────────────────────────────────────── */
-function Done({ name }: { name: string }) {
+function Done({ name, businessId }: { name: string; businessId?: string | null }) {
+  const dashboardHref = businessId ? `/dashboard?business_id=${businessId}` : "/dashboard";
   return (
     <div className="flex flex-col items-center text-center space-y-5 py-6">
       <motion.div
@@ -702,7 +703,7 @@ function Done({ name }: { name: string }) {
       </div>
 
       <Link
-        href="/dashboard"
+        href={dashboardHref}
         className="mt-2 w-full rounded-xl bg-black py-3.5 text-center text-[14px] font-bold text-white no-underline hover:bg-black/85 transition-colors"
       >
         Open Dashboard →
@@ -738,6 +739,11 @@ function OnboardingContent() {
   // When landing with business_id from OAuth callback, skip to Voice step
   useEffect(() => {
     if (businessIdFromUrl) {
+      try {
+        localStorage.setItem("business_id", businessIdFromUrl);
+      } catch {
+        // ignore storage errors
+      }
       setStep(2);
       setForm((prev) => ({ ...prev, googleConnected: true, googleBusiness: "Connected" }));
     }
@@ -828,7 +834,7 @@ function OnboardingContent() {
               exit="exit"
             >
               {done ? (
-                <Done name={form.businessName} />
+                <Done name={form.businessName} businessId={businessIdFromUrl} />
               ) : step === 1 ? (
                 <StepGoogle data={form} onChange={update} onNext={next} businessId={businessIdFromUrl} />
               ) : step === 2 ? (

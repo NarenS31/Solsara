@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -70,7 +70,8 @@ function Avatar({ name }: { name: string }) {
 /* ─── Dashboard ──────────────────────────────────────────────── */
 function DashboardContent() {
   const searchParams = useSearchParams();
-  const businessId = searchParams.get("business_id");
+  const router = useRouter();
+  const [businessId, setBusinessId] = useState<string | null>(null);
   
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +94,29 @@ function DashboardContent() {
   const [smsActionLoading, setSmsActionLoading] = useState(false);
 
   const smsCharCount = defaultMessage.length;
+
+  useEffect(() => {
+    const idFromUrl = searchParams.get("business_id");
+    if (idFromUrl) {
+      setBusinessId(idFromUrl);
+      try {
+        localStorage.setItem("business_id", idFromUrl);
+      } catch {
+        // ignore storage errors
+      }
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem("business_id");
+      if (stored) {
+        setBusinessId(stored);
+        router.replace(`/dashboard?business_id=${stored}`);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [searchParams, router]);
 
   // Fetch reviews from backend API
   useEffect(() => {
