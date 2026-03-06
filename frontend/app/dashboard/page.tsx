@@ -555,7 +555,21 @@ function DashboardContent() {
         )}
 
         {/* Missed Call Net module */}
-        {activeNav === "missed" && (
+        {activeNav === "missed" && !businessId && (
+          <div className="rounded-xl border border-amber-100 bg-amber-50 p-6 mb-6">
+            <p className="text-[13px] font-medium text-amber-700">📋 No business selected</p>
+            <p className="mt-2 text-[12px] text-amber-600/70">
+              Connect your Google business to enable Missed Call Net.
+            </p>
+            <Link href="/api/auth/google" className="mt-4 inline-block">
+              <Button className="h-9 rounded-lg bg-[#0055ff] text-[12px] font-semibold text-white hover:bg-[#0044dd]">
+                Connect Business
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {activeNav === "missed" && businessId && (
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             {/* Left: Setup wizard / status */}
             <div className="space-y-4">
