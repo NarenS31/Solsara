@@ -535,20 +535,16 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
     setError("");
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/checkout/${businessId}`, {
+      const res = await fetch(`${backendUrl}/businesses/${businessId}/start-trial`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
       if (!res.ok) {
-        throw new Error(`Checkout failed: ${res.status}`);
+        throw new Error(`Trial start failed: ${res.status}`);
       }
-      const data = await res.json();
-      if (!data.url) {
-        throw new Error("Missing checkout URL");
-      }
-      window.location.href = data.url;
+      onDone();
     } catch (e) {
-      setError("Could not start checkout. Please try again.");
+      setError("Could not start your free trial. Please try again.");
       setLoading(false);
     }
   }
@@ -558,7 +554,7 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
       <div>
         <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Start your plan</h2>
         <p className="mt-1.5 text-[14px] text-black/45 font-medium">
-          14-day free trial. Cancel anytime. No card surprises.
+          14-day free trial. No card today. We’ll prompt you to add billing before day 14.
         </p>
       </div>
 
@@ -618,7 +614,7 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
         </div>
       </div>
 
-      {/* Stripe CTA */}
+      {/* Trial CTA */}
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
           {error}
@@ -636,10 +632,10 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
               <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
               <path d="M8 2a6 6 0 0 1 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Redirecting to Stripe...
+            Starting trial...
           </span>
         ) : (
-          "Start free trial → Pay $149/mo after 14 days"
+          "Start free trial"
         )}
       </button>
 
@@ -650,14 +646,6 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
       )}
 
       <div className="flex items-center justify-center gap-4 text-[11px] text-black/25">
-        <span className="flex items-center gap-1.5">
-          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-            <rect x="1" y="5" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M4 5V3.5a2 2 0 0 1 4 0V5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-          </svg>
-          Secured by Stripe
-        </span>
-        <span>·</span>
         <span>Cancel anytime</span>
         <span>·</span>
         <span>No contracts</span>

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
+from datetime import datetime, timedelta, timezone
 
 from ..db import supabase
 
@@ -65,3 +66,24 @@ def update_business_tone(business_id: str, payload: ToneUpdateRequest):
         raise HTTPException(status_code=404, detail="business not found")
 
     return {"ok": True, "tone_description": tone_description}
+
+
+@router.post("/{business_id}/start-trial")
+def start_trial(business_id: str):
+    now = datetime.now(timezone.utc)
+    trial_ends = now + timedelta(days=14)
+
+    result = supabase.table("businesses").update({
+        "is_active": True,
+        "trial_started_at": now.isoformat(),
+        "trial_ends_at": trial_ends.isoformat(),
+    }).eq("id", business_id).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=404, detail="business not found")
+
+    return {
+        "ok": True,
+        "trial_started_at": now.isoformat(),
+        "trial_ends_at": trial_ends.isoformat(),
+    }
