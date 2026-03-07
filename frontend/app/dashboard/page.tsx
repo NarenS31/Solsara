@@ -871,6 +871,50 @@ function DashboardContent() {
                       <h3 className="text-[12px] font-bold text-black">Missed calls</h3>
                       <span className="text-[10px] font-semibold text-black/35">Last 7 days</span>
                     </div>
+                    <div className="mb-3 rounded-lg border border-black/[0.06] bg-[#f9fafb] p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          className="flex-1 min-w-[200px] rounded-lg border border-black/[0.08] bg-white px-3 py-2 text-[12px] text-black outline-none placeholder:text-black/30 focus:border-[#0055ff]/40"
+                          placeholder="Your phone number for a test SMS"
+                          value={testNumber}
+                          onChange={(e) => setTestNumber(e.target.value)}
+                        />
+                        <Button
+                          onClick={async () => {
+                            if (!businessId) return;
+                            try {
+                              setSmsActionLoading(true);
+                              setMissedError(null);
+                              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                              const res = await fetch(`${backendUrl}/calls/test?business_id=${businessId}`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ to_number: testNumber }),
+                              });
+                              if (!res.ok) {
+                                let detail = "";
+                                try {
+                                  const errData = await res.json();
+                                  detail = errData.detail ? `: ${errData.detail}` : "";
+                                } catch {
+                                  // ignore
+                                }
+                                throw new Error(`Resend failed: ${res.status}${detail}`);
+                              }
+                            } catch (err) {
+                              setMissedError(err instanceof Error ? err.message : "Failed to send test message");
+                            } finally {
+                              setSmsActionLoading(false);
+                            }
+                          }}
+                          disabled={!testNumber.trim() || smsActionLoading}
+                          className="h-8 rounded-lg bg-[#0055ff] px-3 text-[11px] font-semibold text-white hover:bg-[#0044dd] disabled:opacity-50"
+                        >
+                          {smsActionLoading ? "Sending..." : "Resend test SMS"}
+                        </Button>
+                      </div>
+                      <p className="mt-2 text-[10px] text-black/35">Didn’t get anything? Resend a test message to confirm delivery.</p>
+                    </div>
                     <div className="space-y-2">
                       {missedLogs.map((log) => (
                         <div
