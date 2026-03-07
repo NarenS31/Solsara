@@ -6,7 +6,8 @@ from ..services.twilio_service import (
     release_number,
     send_missed_call_sms,
     forward_reply_to_owner,
-    build_forward_twiml
+    build_forward_twiml,
+    attach_existing_number
 )
 from datetime import datetime, timezone
 import re
@@ -227,6 +228,25 @@ async def provision_business_number_query(business_id: str, request: Request):
             "message": "Number provisioned successfully",
             "twilio_number": twilio_number
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/calls/attach")
+async def attach_existing_twilio_number(business_id: str, request: Request):
+    body = await request.json()
+    twilio_number = body.get("twilio_number")
+    real_number = body.get("real_number")
+
+    if not twilio_number or not real_number:
+        raise HTTPException(status_code=400, detail="twilio_number and real_number are required")
+
+    twilio_number = _normalize_us_number(twilio_number)
+    real_number = _normalize_us_number(real_number)
+
+    try:
+        number = attach_existing_number(business_id, twilio_number, real_number)
+        return {"message": "Number attached successfully", "twilio_number": number}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

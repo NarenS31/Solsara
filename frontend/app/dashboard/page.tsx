@@ -92,6 +92,8 @@ function DashboardContent() {
   const [loadingMissed, setLoadingMissed] = useState(false);
   const [twilioNumber, setTwilioNumber] = useState("");
   const [smsActionLoading, setSmsActionLoading] = useState(false);
+  const [useExistingTwilio, setUseExistingTwilio] = useState(false);
+  const [existingTwilioNumber, setExistingTwilioNumber] = useState("");
 
   const smsCharCount = defaultMessage.length;
 
@@ -621,6 +623,36 @@ function DashboardContent() {
 
                   {smsStep === 1 && (
                     <div className="space-y-4">
+                      <div className="flex items-center gap-2 text-[12px] text-black/60">
+                        <button
+                          onClick={() => setUseExistingTwilio((v) => !v)}
+                          className={cn(
+                            "h-5 w-9 rounded-full border transition-colors",
+                            useExistingTwilio ? "bg-[#0055ff] border-[#0055ff]" : "bg-white border-black/20"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "block h-4 w-4 rounded-full bg-white shadow transition-transform",
+                              useExistingTwilio ? "translate-x-4" : "translate-x-0"
+                            )}
+                          />
+                        </button>
+                        Use my existing Twilio number (trial accounts only get one)
+                      </div>
+
+                      {useExistingTwilio && (
+                        <div>
+                          <p className="text-[13px] font-semibold text-black">Your Twilio number</p>
+                          <input
+                            className="mt-3 w-full rounded-xl border border-black/[0.09] bg-[#f9fafb] px-4 py-3 text-[14px] font-medium text-black outline-none placeholder:text-black/30 focus:border-[#0055ff]/40 focus:bg-white focus:ring-2 focus:ring-[#0055ff]/10"
+                            placeholder="+18445551234"
+                            value={existingTwilioNumber}
+                            onChange={(e) => setExistingTwilioNumber(e.target.value)}
+                          />
+                        </div>
+                      )}
+
                       <div>
                         <p className="text-[13px] font-semibold text-black">
                           What’s your current business phone number? We’ll buy you a local number in the same area code.
@@ -639,10 +671,14 @@ function DashboardContent() {
                             setSmsActionLoading(true);
                             setMissedError(null);
                             const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-                            const res = await fetch(`${backendUrl}/calls/provision?business_id=${businessId}`, {
+                            const endpoint = useExistingTwilio ? "attach" : "provision";
+                            const payload = useExistingTwilio
+                              ? { real_number: businessPhone, twilio_number: existingTwilioNumber }
+                              : { real_number: businessPhone };
+                            const res = await fetch(`${backendUrl}/calls/${endpoint}?business_id=${businessId}`, {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ real_number: businessPhone }),
+                              body: JSON.stringify(payload),
                             });
                             if (!res.ok) {
                               let detail = "";
@@ -663,7 +699,7 @@ function DashboardContent() {
                             setSmsActionLoading(false);
                           }
                         }}
-                        disabled={!businessPhone.trim() || smsActionLoading}
+                        disabled={!businessPhone.trim() || (useExistingTwilio && !existingTwilioNumber.trim()) || smsActionLoading}
                         className="h-10 w-full rounded-lg bg-black text-[12px] font-semibold text-white hover:bg-black/85 disabled:opacity-50"
                       >
                         {smsActionLoading ? "Provisioning..." : "Continue →"}

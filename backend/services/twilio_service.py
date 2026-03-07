@@ -69,6 +69,36 @@ def release_number(twilio_number: str):
         numbers[0].delete()
 
 
+def attach_existing_number(business_id: str, twilio_number: str, real_number: str) -> str:
+    if not settings.railway_url:
+        raise Exception("Missing RAILWAY_URL env var for Twilio webhooks")
+
+    numbers = twilio_client.incoming_phone_numbers.list(
+        phone_number=twilio_number,
+        limit=1
+    )
+
+    if not numbers:
+        raise Exception("Twilio number not found in this account")
+
+    # update webhooks on the existing number
+    numbers[0].update(
+        voice_url=f"{settings.railway_url}/calls/incoming",
+        voice_method="POST",
+        status_callback=f"{settings.railway_url}/calls/status",
+        status_callback_method="POST",
+        sms_url=f"{settings.railway_url}/calls/reply",
+        sms_method="POST",
+    )
+
+    supabase.table("businesses").update({
+        "twilio_number": twilio_number,
+        "real_number": real_number
+    }).eq("id", business_id).execute()
+
+    return twilio_number
+
+
 def send_missed_call_sms(to_number: str, from_number: str, business_name: str, custom_message: str = None):
     # sends the SMS to whoever missed the call
     # uses custom message if business set one, otherwise uses default
