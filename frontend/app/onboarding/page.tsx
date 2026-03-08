@@ -12,11 +12,12 @@ interface FormData {
   email: string;
   password: string;
   googleConnected: boolean;
-  googleBusiness: string;
   voice: string;
   businessDescription: string;
   neverSay: string;
   exampleResponse: string;
+  moduleChoice: "reviews" | "missed" | "";
+  businessPhone: string;
 }
 
 /* ─── Motion ─────────────────────────────────────────────────── */
@@ -43,9 +44,10 @@ const inputCls =
 
 /* ─── Step indicators ────────────────────────────────────────── */
 const STEPS = [
-  { n: 1, label: "Google" },
-  { n: 2, label: "Voice" },
-  { n: 3, label: "Payment" },
+  { n: 1, label: "Account" },
+  { n: 2, label: "Module" },
+  { n: 3, label: "Setup" },
+  { n: 4, label: "Trial" },
 ];
 
 function StepBar({ current }: { current: number }) {
@@ -94,138 +96,133 @@ function StepBar({ current }: { current: number }) {
   );
 }
 
-/* ─── Step 1: Google OAuth ───────────────────────────────────── */
-function StepGoogle({
+/* ─── Step 1: Create account ────────────────────────────────── */
+function StepAccount({
   data,
   onChange,
   onNext,
-  businessId,
+  saving,
+  error,
 }: {
   data: FormData;
   onChange: (k: keyof FormData, v: string | boolean) => void;
   onNext: () => void;
-  businessId?: string | null;
+  saving: boolean;
+  error: string;
 }) {
-  const [connecting, setConnecting] = useState(false);
-  const alreadyConnected = !!businessId || data.googleConnected;
-
-  function handleConnect() {
-    // Real OAuth: redirect to backend
-    window.location.href = "/api/auth/google";
-    setConnecting(true);
-  }
-
+  const valid = data.businessName.trim() && data.email.trim() && data.password.trim();
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Connect Google</h2>
+        <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Create your account</h2>
         <p className="mt-1.5 text-[14px] text-black/45 font-medium">
-          One click. We pull everything automatically — no manual entry.
+          Start with the basics. No Google needed yet.
         </p>
       </div>
 
-      {/* What we get */}
-      <div className="rounded-xl border border-black/[0.06] bg-[#f9fafb] p-4">
-        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-black/30">What we get from Google</p>
-        <div className="space-y-2">
-          {[
-            "Your business name & profile photo",
-            "Your Google location ID",
-            "Your existing reviews",
-            "Your address and hours",
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-2.5 text-[13px] font-medium text-black/60">
-              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                  <path d="M1.5 4l2 2 3-3" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              {item}
-            </div>
-          ))}
+      <div className="space-y-1.5">
+        <label className="block text-[13px] font-bold text-black">Business name</label>
+        <input
+          className={inputCls}
+          placeholder="e.g. Charlotte HVAC Co."
+          value={data.businessName}
+          onChange={(e) => onChange("businessName", e.target.value)}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="block text-[13px] font-bold text-black">Email</label>
+        <input
+          className={inputCls}
+          placeholder="you@company.com"
+          value={data.email}
+          onChange={(e) => onChange("email", e.target.value)}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="block text-[13px] font-bold text-black">Password</label>
+        <input
+          type="password"
+          className={inputCls}
+          placeholder="Create a password"
+          value={data.password}
+          onChange={(e) => onChange("password", e.target.value)}
+        />
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
+          {error}
         </div>
-      </div>
-
-      {/* Trust line */}
-      <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
-        <p className="text-[12px] font-semibold text-amber-800">
-          We only access your reviews. We never edit your business info, hours, or listing details. Ever.
-        </p>
-        <p className="mt-1 text-[11px] text-amber-700/80">
-          Google bundles review access under a broader permission, but we only call review read + reply endpoints.
-        </p>
-      </div>
-
-      {/* OAuth button or success */}
-      <AnimatePresence mode="wait">
-        {alreadyConnected ? (
-          <motion.div
-            key="connected"
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 8l3.5 3.5L13 5" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-[13px] font-bold text-emerald-700">Google connected</div>
-              <div className="text-[12px] text-emerald-600/70">{data.googleBusiness || "Connected"}</div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.a
-            key="connect"
-            href="/api/auth/google"
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-black/[0.09] bg-white py-3.5 text-[14px] font-semibold text-black shadow-[0_1px_8px_rgba(0,0,0,0.06)] hover:border-black/20 hover:shadow-[0_2px_16px_rgba(0,0,0,0.1)] transition-all duration-200 no-underline"
-          >
-            {connecting ? (
-              <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <circle cx="9" cy="9" r="7" stroke="black" strokeOpacity="0.15" strokeWidth="2" />
-                  <path d="M9 2a7 7 0 0 1 7 7" stroke="#0055ff" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-                Connecting...
-              </>
-            ) : (
-              <>
-                {/* Google G logo */}
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                </svg>
-                Continue with Google
-              </>
-            )}
-          </motion.a>
-        )}
-      </AnimatePresence>
+      )}
 
       <button
         onClick={onNext}
-        disabled={!alreadyConnected}
+        disabled={!valid || saving}
         className={cn(
           "w-full rounded-xl py-3.5 text-[14px] font-bold transition-all duration-200",
-          alreadyConnected
+          valid && !saving
+            ? "bg-black text-white hover:bg-black/85 hover:scale-[1.01] active:scale-[0.99]"
+            : "bg-black/[0.06] text-black/25 cursor-not-allowed"
+        )}
+      >
+        {saving ? "Creating..." : "Continue →"}
+      </button>
+    </div>
+  );
+}
+
+/* ─── Step 2: Module choice ─────────────────────────────────── */
+function StepModule({
+  data,
+  onChange,
+  onNext,
+}: {
+  data: FormData;
+  onChange: (k: keyof FormData, v: string | boolean) => void;
+  onNext: () => void;
+}) {
+  const valid = !!data.moduleChoice;
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Choose your first module</h2>
+        <p className="mt-1.5 text-[14px] text-black/45 font-medium">
+          Pick what you want to enable first.
+        </p>
+      </div>
+
+      <div className="grid gap-3">
+        {[{ id: "reviews", title: "Review Replies", desc: "Auto-respond to Google reviews" }, { id: "missed", title: "Missed Call Net", desc: "Auto-text every missed caller" }].map((opt) => (
+          <button
+            key={opt.id}
+            onClick={() => onChange("moduleChoice", opt.id)}
+            className={cn(
+              "flex items-start gap-3 rounded-xl border p-4 text-left transition-all",
+              data.moduleChoice === opt.id
+                ? "border-[#0055ff]/40 bg-[#f0f5ff] shadow-[0_0_0_2px_rgba(0,85,255,0.1)]"
+                : "border-black/[0.07] bg-white hover:border-black/15"
+            )}
+          >
+            <div className={cn("text-[12px] font-bold", data.moduleChoice === opt.id ? "text-[#0055ff]" : "text-black")}>{opt.title}</div>
+            <div className="text-[12px] text-black/45">{opt.desc}</div>
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={onNext}
+        disabled={!valid}
+        className={cn(
+          "w-full rounded-xl py-3.5 text-[14px] font-bold transition-all duration-200",
+          valid
             ? "bg-black text-white hover:bg-black/85 hover:scale-[1.01] active:scale-[0.99]"
             : "bg-black/[0.06] text-black/25 cursor-not-allowed"
         )}
       >
         Continue →
       </button>
-
-      {!alreadyConnected && (
-        <p className="text-center text-[12px] text-black/30">
-          Already have an account?{" "}
-          <Link href="/login" className="text-[#0055ff] font-semibold no-underline hover:underline">
-            Log in with Google
-          </Link>
-        </p>
-      )}
     </div>
   );
 }
@@ -524,6 +521,181 @@ function StepVoice({
   );
 }
 
+/* ─── Step 3: Module setup ──────────────────────────────────── */
+function ReviewRepliesSetup({
+  data,
+  onChange,
+  onNext,
+  businessId,
+  googleConnected,
+}: {
+  data: FormData;
+  onChange: (k: keyof FormData, v: string) => void;
+  onNext: (customRules: string[]) => Promise<void>;
+  businessId?: string | null;
+  googleConnected: boolean;
+}) {
+  const connectUrl = businessId ? `/api/auth/google?business_id=${businessId}` : "/api/auth/google";
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Connect Google</h2>
+        <p className="mt-1.5 text-[14px] text-black/45 font-medium">
+          Review Replies needs Google Business Profile access.
+        </p>
+      </div>
+
+      {!googleConnected ? (
+        <a
+          href={connectUrl}
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-black/[0.09] bg-white py-3.5 text-[14px] font-semibold text-black shadow-[0_1px_8px_rgba(0,0,0,0.06)] hover:border-black/20 hover:shadow-[0_2px_16px_rgba(0,0,0,0.1)] transition-all duration-200 no-underline"
+        >
+          Connect Google
+        </a>
+      ) : (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-[13px] font-semibold text-emerald-700">
+          Google connected
+        </div>
+      )}
+
+      {googleConnected && (
+        <StepVoice data={data} onChange={onChange} onNext={onNext} />
+      )}
+    </div>
+  );
+}
+
+function MissedCallSetup({
+  businessId,
+  businessPhone,
+  setBusinessPhone,
+  useExistingTwilio,
+  setUseExistingTwilio,
+  existingTwilioNumber,
+  setExistingTwilioNumber,
+  onNext,
+  error,
+  setError,
+}: {
+  businessId?: string | null;
+  businessPhone: string;
+  setBusinessPhone: (v: string) => void;
+  useExistingTwilio: boolean;
+  setUseExistingTwilio: (v: boolean) => void;
+  existingTwilioNumber: string;
+  setExistingTwilioNumber: (v: string) => void;
+  onNext: () => void;
+  error: string;
+  setError: (v: string) => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  async function handleProvision() {
+    if (!businessId) return;
+    try {
+      setLoading(true);
+      setError("");
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const endpoint = useExistingTwilio ? "attach" : "provision";
+      const payload = useExistingTwilio
+        ? { real_number: businessPhone, twilio_number: existingTwilioNumber }
+        : { real_number: businessPhone };
+
+      const res = await fetch(`${backendUrl}/calls/${endpoint}?business_id=${businessId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        let detail = "";
+        try {
+          const errData = await res.json();
+          detail = errData.detail ? `: ${errData.detail}` : "";
+        } catch {
+          // ignore
+        }
+        throw new Error(`Setup failed: ${res.status}${detail}`);
+      }
+      onNext();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to set up Missed Call Net");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Missed Call Net setup</h2>
+        <p className="mt-1.5 text-[14px] text-black/45 font-medium">
+          We’ll text every missed caller for you.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 text-[12px] text-black/60">
+        <button
+          onClick={() => setUseExistingTwilio(!useExistingTwilio)}
+          className={cn(
+            "h-5 w-9 rounded-full border transition-colors",
+            useExistingTwilio ? "bg-[#0055ff] border-[#0055ff]" : "bg-white border-black/20"
+          )}
+        >
+          <span
+            className={cn(
+              "block h-4 w-4 rounded-full bg-white shadow transition-transform",
+              useExistingTwilio ? "translate-x-4" : "translate-x-0"
+            )}
+          />
+        </button>
+        Use my existing Twilio number (trial accounts only get one)
+      </div>
+
+      {useExistingTwilio && (
+        <div className="space-y-1.5">
+          <label className="block text-[13px] font-bold text-black">Your Twilio number</label>
+          <input
+            className={inputCls}
+            placeholder="+18445551234"
+            value={existingTwilioNumber}
+            onChange={(e) => setExistingTwilioNumber(e.target.value)}
+          />
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        <label className="block text-[13px] font-bold text-black">
+          What’s your current business phone number?
+        </label>
+        <input
+          className={inputCls}
+          placeholder="(704) 555-0123"
+          value={businessPhone}
+          onChange={(e) => setBusinessPhone(e.target.value)}
+        />
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
+          {error}
+        </div>
+      )}
+
+      <button
+        onClick={handleProvision}
+        disabled={!businessPhone.trim() || (useExistingTwilio && !existingTwilioNumber.trim()) || loading}
+        className={cn(
+          "w-full rounded-xl py-3.5 text-[14px] font-bold transition-all duration-200",
+          !loading && businessPhone.trim()
+            ? "bg-black text-white hover:bg-black/85 hover:scale-[1.01] active:scale-[0.99]"
+            : "bg-black/[0.06] text-black/25 cursor-not-allowed"
+        )}
+      >
+        {loading ? "Setting up..." : "Continue →"}
+      </button>
+    </div>
+  );
+}
+
 /* ─── Step 3: Payment ────────────────────────────────────────── */
 function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () => void; businessId?: string | null }) {
   const [loading, setLoading] = useState(false);
@@ -704,27 +876,42 @@ function Done({ name, businessId }: { name: string; businessId?: string | null }
 function OnboardingContent() {
   const searchParams = useSearchParams();
   const businessIdFromUrl = searchParams.get("business_id");
+  const googleConnectedFromUrl = searchParams.get("google") === "connected";
 
   const [step, setStep] = useState(1);
   const [dir, setDir] = useState(1);
   const [done, setDone] = useState(false);
+  const [businessId, setBusinessId] = useState<string | null>(businessIdFromUrl);
+  const [signupLoading, setSignupLoading] = useState(false);
+  const [signupError, setSignupError] = useState("");
+  const [missedSetupError, setMissedSetupError] = useState("");
+  const [useExistingTwilio, setUseExistingTwilio] = useState(false);
+  const [existingTwilioNumber, setExistingTwilioNumber] = useState("");
   const [form, setForm] = useState<FormData>({
     businessName: "",
     email: "",
     password: "",
-    googleConnected: !!businessIdFromUrl,
-    googleBusiness: businessIdFromUrl ? "Connected" : "",
+    googleConnected: googleConnectedFromUrl,
     voice: "",
     businessDescription: "",
     neverSay: "",
     exampleResponse: "",
+    moduleChoice: "",
+    businessPhone: "",
   });
 
   function update(k: keyof FormData, v: string | boolean) {
     setForm((prev) => ({ ...prev, [k]: v }));
+    if (k === "moduleChoice" && typeof v === "string") {
+      try {
+        localStorage.setItem("module_choice", v);
+      } catch {
+        // ignore
+      }
+    }
   }
 
-  // When landing with business_id from OAuth callback, skip to Voice step
+  // When landing with business_id from OAuth callback, persist and stay on setup
   useEffect(() => {
     if (businessIdFromUrl) {
       try {
@@ -732,10 +919,35 @@ function OnboardingContent() {
       } catch {
         // ignore storage errors
       }
-      setStep(2);
-      setForm((prev) => ({ ...prev, googleConnected: true, googleBusiness: "Connected" }));
+      setBusinessId(businessIdFromUrl);
+      if (googleConnectedFromUrl) {
+        setForm((prev) => ({ ...prev, googleConnected: true, moduleChoice: "reviews" }));
+        setStep(3);
+      }
     }
-  }, [businessIdFromUrl]);
+  }, [businessIdFromUrl, googleConnectedFromUrl]);
+
+  useEffect(() => {
+    if (businessId) return;
+    try {
+      const stored = localStorage.getItem("business_id");
+      if (stored) setBusinessId(stored);
+    } catch {
+      // ignore
+    }
+  }, [businessId]);
+
+  useEffect(() => {
+    if (form.moduleChoice) return;
+    try {
+      const storedChoice = localStorage.getItem("module_choice");
+      if (storedChoice === "reviews" || storedChoice === "missed") {
+        setForm((prev) => ({ ...prev, moduleChoice: storedChoice }));
+      }
+    } catch {
+      // ignore
+    }
+  }, [form.moduleChoice]);
 
   function next() {
     setDir(1);
@@ -822,41 +1034,99 @@ function OnboardingContent() {
               exit="exit"
             >
               {done ? (
-                <Done name={form.businessName} businessId={businessIdFromUrl} />
+                <Done name={form.businessName} businessId={businessId} />
               ) : step === 1 ? (
-                <StepGoogle data={form} onChange={update} onNext={next} businessId={businessIdFromUrl} />
-              ) : step === 2 ? (
-                <StepVoice
+                <StepAccount
                   data={form}
                   onChange={update}
-                  onNext={async (customRules) => {
-                    if (!businessIdFromUrl) {
+                  saving={signupLoading}
+                  error={signupError}
+                  onNext={async () => {
+                    if (signupLoading) return;
+                    try {
+                      setSignupLoading(true);
+                      setSignupError("");
+                      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                      const res = await fetch(`${backendUrl}/businesses/signup`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          business_name: form.businessName,
+                          email: form.email,
+                          password: form.password,
+                        }),
+                      });
+                      if (!res.ok) {
+                        let detail = "";
+                        try {
+                          const errData = await res.json();
+                          detail = errData.detail ? `: ${errData.detail}` : "";
+                        } catch {
+                          // ignore
+                        }
+                        throw new Error(`Signup failed${detail}`);
+                      }
+                      const data = await res.json();
+                      setBusinessId(data.business_id);
+                      try {
+                        localStorage.setItem("business_id", data.business_id);
+                      } catch {
+                        // ignore
+                      }
                       next();
-                      return;
+                    } catch (e) {
+                      setSignupError(e instanceof Error ? e.message : "Failed to create account");
+                    } finally {
+                      setSignupLoading(false);
                     }
-
-                    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-                    const response = await fetch(`${backendUrl}/businesses/${businessIdFromUrl}/tone`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        voice: form.voice,
-                        business_description: form.businessDescription,
-                        never_say: form.neverSay,
-                        example_response: form.exampleResponse,
-                        custom_rules: customRules,
-                      }),
-                    });
-
-                    if (!response.ok) {
-                      throw new Error(`Failed to save voice: ${response.status}`);
-                    }
-
-                    next();
                   }}
                 />
+              ) : step === 2 ? (
+                <StepModule data={form} onChange={update} onNext={next} />
+              ) : step === 3 ? (
+                form.moduleChoice === "reviews" ? (
+                  <ReviewRepliesSetup
+                    data={form}
+                    onChange={update}
+                    businessId={businessId}
+                    googleConnected={form.googleConnected}
+                    onNext={async (customRules) => {
+                      if (!businessId) return;
+                      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                      const response = await fetch(`${backendUrl}/businesses/${businessId}/tone`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          voice: form.voice,
+                          business_description: form.businessDescription,
+                          never_say: form.neverSay,
+                          example_response: form.exampleResponse,
+                          custom_rules: customRules,
+                        }),
+                      });
+
+                      if (!response.ok) {
+                        throw new Error(`Failed to save voice: ${response.status}`);
+                      }
+                      next();
+                    }}
+                  />
+                ) : (
+                  <MissedCallSetup
+                    businessId={businessId}
+                    businessPhone={form.businessPhone}
+                    setBusinessPhone={(v) => update("businessPhone", v)}
+                    useExistingTwilio={useExistingTwilio}
+                    setUseExistingTwilio={setUseExistingTwilio}
+                    existingTwilioNumber={existingTwilioNumber}
+                    setExistingTwilioNumber={setExistingTwilioNumber}
+                    onNext={next}
+                    error={missedSetupError}
+                    setError={setMissedSetupError}
+                  />
+                )
               ) : (
-                <StepPayment data={form} onDone={() => setDone(true)} businessId={businessIdFromUrl} />
+                <StepPayment data={form} onDone={() => setDone(true)} businessId={businessId} />
               )}
             </motion.div>
           </AnimatePresence>

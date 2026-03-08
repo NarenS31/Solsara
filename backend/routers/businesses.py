@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime, timedelta, timezone
+import hashlib
+import secrets
 
 from ..db import supabase
 
@@ -21,6 +23,12 @@ class ToneUpdateRequest(BaseModel):
     never_say: str = ""
     example_response: str = ""
     custom_rules: List[str] = []
+
+
+class SignupRequest(BaseModel):
+    business_name: str
+    email: str
+    password: str
 
 
 def build_tone_description(
@@ -46,6 +54,30 @@ def build_tone_description(
     if extras:
         return base + "\n\n" + "\n".join(extras)
     return base
+
+
+@router.post("/signup")
+def signup(payload: SignupRequest):
+    if not payload.email or not payload.password:
+        raise HTTPException(
+            status_code=400, detail="email and password are required")
+
+    salt = secrets.token_hex(16)
+    password_hash = hashlib.sha256(
+        f"{salt}:{payload.password}".encode()).hexdigest()
+    stored = f"{salt}${password_hash}"
+
+    result = supabase.table("businesses").insert({
+        "name": payload.business_name,
+        "email": payload.email,
+        "password_hash": stored,
+        "is_active": False,
+    }).execute()
+
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to create account")
+
+    return {"business_id": result.data[0]["id"]}
 
 
 @router.post("/{business_id}/tone")

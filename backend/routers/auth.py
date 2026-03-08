@@ -47,7 +47,7 @@ def create_flow():
 
 
 @router.get("/google")
-def google_login():
+def google_login(state: str = None):
     if not settings.google_client_id or not settings.google_client_secret:
         logger.error("google_login_missing_oauth_config")
         raise HTTPException(
@@ -62,7 +62,8 @@ def google_login():
     authorization_url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
-        prompt="consent"
+        prompt="consent",
+        state=state
     )
 
     logger.info("google_login_redirect", extra={"state": state})
@@ -111,6 +112,28 @@ def google_callback(code: str, request: Request, state: str = None):
         flow.fetch_token(code=code)
         credentials = flow.credentials
         google_user_id = _get_google_user_id(credentials)
+
+        # If a business_id was provided in OAuth state, attach tokens to it
+        if state and state.startswith("bid:"):
+            business_id = state.replace("bid:", "", 1)
+            update_data = {
+                "access_token": credentials.token,
+                "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+            }
+            if credentials.refresh_token:
+                update_data["refresh_token"] = credentials.refresh_token
+            if google_user_id:
+                update_data["google_user_id"] = google_user_id
+
+            updated = supabase.table("businesses").update(update_data).eq(
+                "id", business_id).execute()
+            if updated.data:
+                redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}&google=connected"
+                logger.info("google_callback_attached_business",
+                            extra={"business_id": business_id})
+                resp = RedirectResponse(url=redirect_url)
+                resp.delete_cookie("oauth_code_verifier")
+                return resp
 
         # Returning user: find existing business by google_user_id
         if google_user_id:
