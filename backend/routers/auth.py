@@ -8,6 +8,7 @@ from ..db import supabase
 import os
 import logging
 from urllib.parse import quote
+import secrets
 
 router = APIRouter(prefix="/auth")
 logger = logging.getLogger("solsara.auth")
@@ -55,6 +56,10 @@ def google_login(state: str = None):
 
     flow = create_flow()
 
+    # ensure PKCE code_verifier exists
+    if not getattr(flow, "code_verifier", None):
+        flow.code_verifier = secrets.token_urlsafe(32)
+
     # generates the Google login URL
     # access_type=offline gets us a refresh token
     # prompt=consent forces Google to always give us a refresh token
@@ -63,7 +68,8 @@ def google_login(state: str = None):
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
-        state=state
+        state=state,
+        code_challenge_method="S256"
     )
 
     logger.info("google_login_redirect", extra={"state": state})
@@ -79,7 +85,7 @@ def google_login(state: str = None):
             code_verifier,
             httponly=True,
             secure=secure_cookie,
-            samesite="lax",
+            samesite="none" if secure_cookie else "lax",
             max_age=10 * 60,
         )
     return response
@@ -109,6 +115,8 @@ def google_callback(code: str, request: Request, state: str = None):
         code_verifier = request.cookies.get("oauth_code_verifier")
         if code_verifier:
             flow.code_verifier = code_verifier
+        else:
+            raise HTTPException(status_code=400, detail="Missing code verifier cookie")
         flow.fetch_token(code=code)
         credentials = flow.credentials
         google_user_id = _get_google_user_id(credentials)
