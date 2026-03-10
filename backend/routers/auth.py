@@ -121,6 +121,19 @@ def google_callback(code: str, request: Request, state: str = None):
         credentials = flow.credentials
         google_user_id = _get_google_user_id(credentials)
 
+        # Google must return refresh_token for us to fetch reviews; without it we can't refresh.
+        if not credentials.refresh_token:
+            logger.warning("google_callback_no_refresh_token", extra={
+                "google_user_id": google_user_id,
+                "has_token": bool(credentials.token),
+            })
+            resp = RedirectResponse(
+                url=f"{settings.frontend_url}/login?error=oauth_failed&reason=no_refresh_token&detail="
+                + quote("Google did not grant offline access. Please go to myaccount.google.com/permissions, remove Solsara, then sign in again.")
+            )
+            resp.delete_cookie("oauth_code_verifier")
+            return resp
+
         # If a business_id was provided in OAuth state, attach tokens to it
         if state and state.startswith("bid:"):
             business_id = state.replace("bid:", "", 1)

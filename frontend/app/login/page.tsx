@@ -30,15 +30,35 @@ function LoginContent() {
               <p className="text-[12px] font-semibold text-amber-700">
                 Google sign-in didn’t finish. Please try again.
               </p>
-              {oauthReason && (
-                <p className="mt-1 text-[11px] text-amber-700/80">
-                  Debug: {oauthReason}
+              {oauthReason === "no_refresh_token" ? (
+                <p className="mt-2 text-[11px] text-amber-700/80">
+                  1. Go to{" "}
+                  <a
+                    href="https://myaccount.google.com/permissions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-800 underline"
+                  >
+                    myaccount.google.com/permissions
+                  </a>
+                  <br />
+                  2. Find Solsara and remove access
+                  <br />
+                  3. Try signing in again (use Incognito if it persists)
                 </p>
-              )}
-              {oauthDetail && (
-                <p className="mt-1 text-[11px] text-amber-700/70 break-words">
-                  Detail: {decodeURIComponent(oauthDetail)}
-                </p>
+              ) : (
+                <>
+                  {oauthReason && (
+                    <p className="mt-1 text-[11px] text-amber-700/80">
+                      Debug: {oauthReason}
+                    </p>
+                  )}
+                  {oauthDetail && (
+                    <p className="mt-1 text-[11px] text-amber-700/70 break-words">
+                      Detail: {decodeURIComponent(oauthDetail)}
+                    </p>
+                  )}
+                </>
               )}
             </div>
           )}
