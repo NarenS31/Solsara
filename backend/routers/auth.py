@@ -66,7 +66,6 @@ def google_login(state: str = None):
     # without prompt=consent returning users won't get a refresh token
     authorization_url, state = flow.authorization_url(
         access_type="offline",
-        include_granted_scopes="true",
         prompt="consent",
         state=state,
         code_challenge_method="S256"
@@ -116,7 +115,8 @@ def google_callback(code: str, request: Request, state: str = None):
         if code_verifier:
             flow.code_verifier = code_verifier
         else:
-            raise HTTPException(status_code=400, detail="Missing code verifier cookie")
+            raise HTTPException(
+                status_code=400, detail="Missing code verifier cookie")
         flow.fetch_token(code=code)
         credentials = flow.credentials
         google_user_id = _get_google_user_id(credentials)
