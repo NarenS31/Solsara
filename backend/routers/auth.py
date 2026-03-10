@@ -16,6 +16,8 @@ logger = logging.getLogger("solsara.auth")
 # required for localhost HTTP only — not needed in production (HTTPS)
 if settings.google_redirect_uri.startswith("http://"):
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+# Google may return scopes in different order/format than requested; relax validation
+os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
 # the permission we're requesting from Google
 # business.manage lets us read reviews and post responses
