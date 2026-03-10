@@ -1,6 +1,5 @@
 from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
+from google.auth.transport.requests import Request, AuthorizedSession
 from ..db import supabase
 from ..config import settings
 from datetime import datetime, timezone
@@ -37,6 +36,14 @@ def get_credentials(business: dict) -> Credentials:
     return credentials
 
 
+def _get_json(session: AuthorizedSession, url: str, params: dict | None = None) -> dict:
+    response = session.get(url, params=params)
+    if response.status_code >= 400:
+        print(f"Google API error {response.status_code}: {response.text}")
+        return {}
+    return response.json() or {}
+
+
 def get_reviews(business: dict) -> list:
     # returns empty list in dev mode — reads from fake_reviews.json instead
     from ..config import settings
@@ -50,26 +57,21 @@ def get_reviews(business: dict) -> list:
 
     # gets valid credentials — refreshes if needed
     credentials = get_credentials(business)
+    session = AuthorizedSession(credentials)
+    base_url = "https://mybusiness.googleapis.com/v4"
 
-    # builds the Google My Business API client
-    service = build("mybusiness", "v4", credentials=credentials)
-
-    # gets the account first
-    accounts = service.accounts().list().execute()
-    if not accounts.get("accounts"):
+    accounts = _get_json(session, f"{base_url}/accounts").get("accounts", [])
+    if not accounts:
         return []
 
-    account_name = accounts["accounts"][0]["name"]
+    account_name = accounts[0]["name"]
 
-    # gets locations for this account
-    locations = service.accounts().locations().list(
-        parent=account_name
-    ).execute()
-
-    if not locations.get("locations"):
+    locations = _get_json(
+        session, f"{base_url}/{account_name}/locations").get("locations", [])
+    if not locations:
         return []
 
-    location_name = locations["locations"][0]["name"]
+    location_name = locations[0]["name"]
 
     # saves location id to business record if not already there
     if not business.get("google_location_id"):
@@ -78,9 +80,8 @@ def get_reviews(business: dict) -> list:
         }).eq("id", business["id"]).execute()
 
     # gets reviews for this location
-    reviews_response = service.accounts().locations().reviews().list(
-        parent=location_name
-    ).execute()
+    reviews_response = _get_json(
+        session, f"{base_url}/{location_name}/reviews")
 
     return reviews_response.get("reviews", [])
 
@@ -89,13 +90,16 @@ def post_review_response(business: dict, review_name: str, response_text: str) -
     # posts a response to a specific review
     try:
         credentials = get_credentials(business)
-        service = build("mybusiness", "v4", credentials=credentials)
-
-        service.accounts().locations().reviews().updateReply(
-            name=review_name,
-            body={"comment": response_text}
-        ).execute()
-
+        session = AuthorizedSession(credentials)
+        base_url = "https://mybusiness.googleapis.com/v4"
+        response = session.put(
+            f"{base_url}/{review_name}/reply",
+            json={"comment": response_text}
+        )
+        if response.status_code >= 400:
+            print(
+                f"Failed to post response: {response.status_code} {response.text}")
+            return False
         return True
     except Exception as e:
         print(f"Failed to post response: {e}")
