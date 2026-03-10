@@ -7,6 +7,9 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 /* ─── Types ──────────────────────────────────────────────────── */
+type ModuleChoice = Array<"reviews" | "missed">;
+type FormValue = string | boolean | ModuleChoice;
+
 interface FormData {
   businessName: string;
   email: string;
@@ -16,7 +19,7 @@ interface FormData {
   businessDescription: string;
   neverSay: string;
   exampleResponse: string;
-  moduleChoice: "reviews" | "missed" | "";
+  moduleChoice: ModuleChoice;
   businessPhone: string;
 }
 
@@ -105,7 +108,7 @@ function StepAccount({
   error,
 }: {
   data: FormData;
-  onChange: (k: keyof FormData, v: string | boolean) => void;
+  onChange: (k: keyof FormData, v: FormValue) => void;
   onNext: () => void;
   saving: boolean;
   error: string;
@@ -180,10 +183,16 @@ function StepModule({
   onNext,
 }: {
   data: FormData;
-  onChange: (k: keyof FormData, v: string | boolean) => void;
+  onChange: (k: keyof FormData, v: FormValue) => void;
   onNext: () => void;
 }) {
-  const valid = !!data.moduleChoice;
+  const valid = data.moduleChoice.length > 0;
+  const toggleModule = (id: "reviews" | "missed") => {
+    const nextChoice = data.moduleChoice.includes(id)
+      ? data.moduleChoice.filter((choice) => choice !== id)
+      : [...data.moduleChoice, id];
+    onChange("moduleChoice", nextChoice);
+  };
   return (
     <div className="space-y-5">
       <div>
@@ -197,15 +206,15 @@ function StepModule({
         {[{ id: "reviews", title: "Review Replies", desc: "Auto-respond to Google reviews" }, { id: "missed", title: "Missed Call Net", desc: "Auto-text every missed caller" }].map((opt) => (
           <button
             key={opt.id}
-            onClick={() => onChange("moduleChoice", opt.id)}
+            onClick={() => toggleModule(opt.id as "reviews" | "missed")}
             className={cn(
               "flex items-start gap-3 rounded-xl border p-4 text-left transition-all",
-              data.moduleChoice === opt.id
+              data.moduleChoice.includes(opt.id as "reviews" | "missed")
                 ? "border-[#0055ff]/40 bg-[#f0f5ff] shadow-[0_0_0_2px_rgba(0,85,255,0.1)]"
                 : "border-black/[0.07] bg-white hover:border-black/15"
             )}
           >
-            <div className={cn("text-[12px] font-bold", data.moduleChoice === opt.id ? "text-[#0055ff]" : "text-black")}>{opt.title}</div>
+            <div className={cn("text-[12px] font-bold", data.moduleChoice.includes(opt.id as "reviews" | "missed") ? "text-[#0055ff]" : "text-black")}>{opt.title}</div>
             <div className="text-[12px] text-black/45">{opt.desc}</div>
           </button>
         ))}
@@ -882,6 +891,7 @@ function OnboardingContent() {
   const [dir, setDir] = useState(1);
   const [done, setDone] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(businessIdFromUrl);
+  const [setupIndex, setSetupIndex] = useState(0);
   const [signupLoading, setSignupLoading] = useState(false);
   const [signupError, setSignupError] = useState("");
   const [missedSetupError, setMissedSetupError] = useState("");
@@ -896,15 +906,15 @@ function OnboardingContent() {
     businessDescription: "",
     neverSay: "",
     exampleResponse: "",
-    moduleChoice: "",
+    moduleChoice: [],
     businessPhone: "",
   });
 
-  function update(k: keyof FormData, v: string | boolean) {
+  function update(k: keyof FormData, v: FormValue) {
     setForm((prev) => ({ ...prev, [k]: v }));
-    if (k === "moduleChoice" && typeof v === "string") {
+    if (k === "moduleChoice" && Array.isArray(v)) {
       try {
-        localStorage.setItem("module_choice", v);
+        localStorage.setItem("module_choice", JSON.stringify(v));
       } catch {
         // ignore
       }
@@ -921,8 +931,15 @@ function OnboardingContent() {
       }
       setBusinessId(businessIdFromUrl);
       if (googleConnectedFromUrl) {
-        setForm((prev) => ({ ...prev, googleConnected: true, moduleChoice: "reviews" }));
+        setForm((prev) => ({
+          ...prev,
+          googleConnected: true,
+          moduleChoice: prev.moduleChoice.includes("reviews")
+            ? prev.moduleChoice
+            : [...prev.moduleChoice, "reviews"],
+        }));
         setStep(3);
+        setSetupIndex(0);
       }
     }
   }, [businessIdFromUrl, googleConnectedFromUrl]);
@@ -938,20 +955,45 @@ function OnboardingContent() {
   }, [businessId]);
 
   useEffect(() => {
-    if (form.moduleChoice) return;
+    if (form.moduleChoice.length > 0) return;
     try {
       const storedChoice = localStorage.getItem("module_choice");
+      if (!storedChoice) return;
+      try {
+        const parsed = JSON.parse(storedChoice);
+        if (Array.isArray(parsed)) {
+          const filtered = parsed.filter((choice) => choice === "reviews" || choice === "missed");
+          if (filtered.length > 0) {
+            setForm((prev) => ({ ...prev, moduleChoice: filtered as ModuleChoice }));
+            return;
+          }
+        }
+      } catch {
+        // ignore JSON parse errors
+      }
       if (storedChoice === "reviews" || storedChoice === "missed") {
-        setForm((prev) => ({ ...prev, moduleChoice: storedChoice }));
+        setForm((prev) => ({ ...prev, moduleChoice: [storedChoice] }));
       }
     } catch {
       // ignore
     }
   }, [form.moduleChoice]);
 
+  useEffect(() => {
+    setSetupIndex(0);
+  }, [form.moduleChoice]);
+
   function next() {
     setDir(1);
     setStep((s) => s + 1);
+  }
+
+  function advanceSetup() {
+    if (setupIndex < form.moduleChoice.length - 1) {
+      setSetupIndex((prev) => prev + 1);
+      return;
+    }
+    next();
   }
 
   return (
@@ -1084,7 +1126,7 @@ function OnboardingContent() {
               ) : step === 2 ? (
                 <StepModule data={form} onChange={update} onNext={next} />
               ) : step === 3 ? (
-                form.moduleChoice === "reviews" ? (
+                form.moduleChoice[setupIndex] === "reviews" ? (
                   <ReviewRepliesSetup
                     data={form}
                     onChange={update}
@@ -1108,7 +1150,7 @@ function OnboardingContent() {
                       if (!response.ok) {
                         throw new Error(`Failed to save voice: ${response.status}`);
                       }
-                      next();
+                      advanceSetup();
                     }}
                   />
                 ) : (
@@ -1120,7 +1162,7 @@ function OnboardingContent() {
                     setUseExistingTwilio={setUseExistingTwilio}
                     existingTwilioNumber={existingTwilioNumber}
                     setExistingTwilioNumber={setExistingTwilioNumber}
-                    onNext={next}
+                    onNext={advanceSetup}
                     error={missedSetupError}
                     setError={setMissedSetupError}
                   />

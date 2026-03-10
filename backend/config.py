@@ -40,10 +40,12 @@ class Settings(BaseSettings):
     railway_url: str = ""
 
     # Dev
-    dev_mode: bool = True
+    dev_mode: bool = False
     allowed_origins: List[str] = [
         "http://localhost:3000",
         "https://solsara.vercel.app",
+        "https://solsara.ai",
+        "https://www.solsara.ai",
     ]
 
     class Config:

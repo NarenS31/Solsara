@@ -33,30 +33,12 @@ def poll_all_businesses():
     details = []
     for business in businesses:
         try:
-            # Example: simulate a single review to test
-            review = {
-                "reviewId": "test-review-1",
-                "comment": "The food was great, but service was slow.",
-                "starRating": "FOUR",
-                "reviewer": {"displayName": "Alice"},
-                "createTime": "2026-02-28T00:00:00Z"
-            }
-
-            # call your LLM function
-            result = generate_response(
-                review_comment=review["comment"],
-                reviewer_name=review["reviewer"]["displayName"],
-                rating=4,
-                business_name=business["name"],
-                tone_description=business.get(
-                    "tone_description", "professional and friendly"),
-                previous_responses=_get_recent_responses(business["id"])
-            )
-
+            result = poll_business(business)
             details.append({
                 "business_id": business["id"],
-                "response": result["response"],
-                "confidence": result["confidence"]
+                "reviews_seen": result.get("reviews_seen", 0),
+                "reviews_processed": result.get("reviews_processed", 0),
+                "reviews_skipped": result.get("reviews_skipped", 0),
             })
         except Exception as e:
             details.append({
