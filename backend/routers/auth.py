@@ -86,7 +86,9 @@ def google_login(state: str = None):
             code_verifier,
             httponly=True,
             secure=secure_cookie,
-            samesite="none" if secure_cookie else "lax",
+            # Lax is sufficient for OAuth top-level redirects and avoids
+            # issues where browsers drop SameSite=None cookies.
+            samesite="lax",
             max_age=10 * 60,
         )
     return response
