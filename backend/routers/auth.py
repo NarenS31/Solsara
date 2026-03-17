@@ -58,10 +58,6 @@ def google_login(state: str = None):
 
     flow = create_flow()
 
-    # ensure PKCE code_verifier exists
-    if not getattr(flow, "code_verifier", None):
-        flow.code_verifier = secrets.token_urlsafe(32)
-
     # generates the Google login URL
     # access_type=offline gets us a refresh token
     # prompt=consent forces Google to always give us a refresh token
@@ -70,28 +66,12 @@ def google_login(state: str = None):
         access_type="offline",
         prompt="consent",
         state=state,
-        code_challenge_method="S256"
     )
 
     logger.info("google_login_redirect", extra={"state": state})
 
     # redirects business owner to Google's login page
-    response = RedirectResponse(authorization_url)
-    # persist PKCE code_verifier for token exchange in callback
-    code_verifier = getattr(flow, "code_verifier", None)
-    if code_verifier:
-        secure_cookie = not settings.google_redirect_uri.startswith("http://")
-        response.set_cookie(
-            "oauth_code_verifier",
-            code_verifier,
-            httponly=True,
-            secure=secure_cookie,
-            # Lax is sufficient for OAuth top-level redirects and avoids
-            # issues where browsers drop SameSite=None cookies.
-            samesite="lax",
-            max_age=10 * 60,
-        )
-    return response
+    return RedirectResponse(authorization_url)
 
 
 def _get_google_user_id(credentials) -> str | None:
@@ -114,13 +94,6 @@ def google_callback(code: str, request: Request, state: str = None):
     try:
         logger.info("google_callback_start", extra={"state": state})
         flow = create_flow()
-        # restore PKCE code_verifier from cookie if present
-        code_verifier = request.cookies.get("oauth_code_verifier")
-        if code_verifier:
-            flow.code_verifier = code_verifier
-        else:
-            raise HTTPException(
-                status_code=400, detail="Missing code verifier cookie")
         flow.fetch_token(code=code)
         credentials = flow.credentials
         google_user_id = _get_google_user_id(credentials)
@@ -135,7 +108,6 @@ def google_callback(code: str, request: Request, state: str = None):
                 url=f"{settings.frontend_url}/login?error=oauth_failed&reason=no_refresh_token&detail="
                 + quote("Google did not grant offline access. Please go to myaccount.google.com/permissions, remove Solsara, then sign in again.")
             )
-            resp.delete_cookie("oauth_code_verifier")
             return resp
 
         # If a business_id was provided in OAuth state, attach tokens to it
@@ -157,7 +129,6 @@ def google_callback(code: str, request: Request, state: str = None):
                 logger.info("google_callback_attached_business",
                             extra={"business_id": business_id})
                 resp = RedirectResponse(url=redirect_url)
-                resp.delete_cookie("oauth_code_verifier")
                 return resp
 
         # Returning user: find existing business by google_user_id
@@ -223,7 +194,6 @@ def google_callback(code: str, request: Request, state: str = None):
         logger.info("google_callback_new_business",
                     extra={"business_id": business_id})
         resp = RedirectResponse(url=redirect_url)
-        resp.delete_cookie("oauth_code_verifier")
         return resp
 
     except HTTPException:
@@ -237,7 +207,6 @@ def google_callback(code: str, request: Request, state: str = None):
         if safe_detail:
             safe_redirect = f"{safe_redirect}&detail={safe_detail}"
         resp = RedirectResponse(url=safe_redirect)
-        resp.delete_cookie("oauth_code_verifier")
         return resp
 
 
