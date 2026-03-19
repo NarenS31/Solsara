@@ -101,6 +101,20 @@ def google_login(state: str = None):
     return RedirectResponse(authorization_url)
 
 
+def _is_duplicate_key_error(err: Exception) -> bool:
+    """Detect PostgreSQL unique constraint violation (23505) from Supabase/PostgREST APIError."""
+    err_str = str(err)
+    if "23505" in err_str:
+        return True
+    code = getattr(err, "code", None)
+    if code in ("23505", 23505):
+        return True
+    details = getattr(err, "details", None)
+    if isinstance(details, dict) and details.get("code") in ("23505", 23505):
+        return True
+    return False
+
+
 def _get_google_user_id(credentials) -> str | None:
     """Extract Google user ID (sub) from id_token for login/signup lookup."""
     if not getattr(credentials, "id_token", None):
@@ -156,14 +170,35 @@ def google_callback(code: str, request: Request, state: str = None):
             if google_user_id:
                 update_data["google_user_id"] = google_user_id
 
-            updated = supabase.table("businesses").update(update_data).eq(
-                "id", business_id).execute()
-            if updated.data:
-                redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}&google=connected"
-                logger.info("google_callback_attached_business",
-                            extra={"business_id": business_id})
-                resp = RedirectResponse(url=redirect_url)
-                return resp
+            try:
+                updated = supabase.table("businesses").update(update_data).eq(
+                    "id", business_id).execute()
+                if updated.data:
+                    redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}&google=connected"
+                    logger.info("google_callback_attached_business",
+                                extra={"business_id": business_id})
+                    resp = RedirectResponse(url=redirect_url)
+                    return resp
+            except Exception as update_err:
+                # google_user_id already linked to another business: sign into that one instead
+                if _is_duplicate_key_error(update_err) and google_user_id:
+                    logger.info("google_callback_bid_dup_redirecting_to_existing")
+                    existing = supabase.table("businesses").select("id").eq(
+                        "google_user_id", str(google_user_id)
+                    ).limit(1).execute()
+                    if existing and existing.data:
+                        existing_id = existing.data[0]["id"]
+                        tok_update = {
+                            "access_token": credentials.token,
+                            "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+                        }
+                        if credentials.refresh_token:
+                            tok_update["refresh_token"] = credentials.refresh_token
+                        supabase.table("businesses").update(tok_update).eq("id", existing_id).execute()
+                        return RedirectResponse(
+                            url=f"{settings.frontend_url}/dashboard?business_id={existing_id}"
+                        )
+                raise
 
         # Returning user: find existing business by google_user_id
         if google_user_id:
@@ -205,13 +240,8 @@ def google_callback(code: str, request: Request, state: str = None):
         try:
             result = supabase.table("businesses").insert(insert_data).execute()
         except Exception as insert_err:
-            err_str = str(insert_err)
-            code = getattr(insert_err, "code", None) or (
-                getattr(insert_err, "details", None) or {}
-            ).get("code", "")
             # Duplicate google_user_id: treat as returning user, update existing row
-            is_dup = "23505" in err_str or code == "23505" or code == 23505
-            if is_dup and google_user_id:
+            if _is_duplicate_key_error(insert_err) and google_user_id:
                 logger.info("google_callback_duplicate_google_user_id_treating_as_returning")
                 existing = supabase.table("businesses").select("id").eq(
                     "google_user_id", str(google_user_id)
