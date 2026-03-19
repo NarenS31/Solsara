@@ -239,13 +239,15 @@ async def attach_existing_twilio_number(business_id: str, request: Request):
     real_number = body.get("real_number")
 
     if not twilio_number or not real_number:
-        raise HTTPException(status_code=400, detail="twilio_number and real_number are required")
+        raise HTTPException(
+            status_code=400, detail="twilio_number and real_number are required")
 
     twilio_number = _normalize_us_number(twilio_number)
     real_number = _normalize_us_number(real_number)
 
     try:
-        number = attach_existing_number(business_id, twilio_number, real_number)
+        number = attach_existing_number(
+            business_id, twilio_number, real_number)
         return {"message": "Number attached successfully", "twilio_number": number}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

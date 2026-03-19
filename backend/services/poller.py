@@ -21,13 +21,13 @@ def _get_recent_responses(business_id: str, limit: int = 5) -> list:
 
 
 def poll_all_businesses():
-    # fetch all active businesses
-    result = supabase.table("businesses").select(
-        "*").eq("is_active", True).execute()
-    businesses = result.data
+    # fetch businesses with Google connected — show reviews even before checkout
+    result = supabase.table("businesses").select("*").execute()
+    all_businesses = result.data or []
+    businesses = [b for b in all_businesses if b.get("refresh_token")]
 
     if not businesses:
-        print("No active businesses to poll")
+        print("No businesses with Google connected to poll")
         return {"processed": 0, "details": []}
 
     details = []

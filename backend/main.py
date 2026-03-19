@@ -36,12 +36,13 @@ cors_origins = {
 cors_origins.update({
     "https://solsara.vercel.app",
     "https://solsara.ai",
+    "https://www.solsara.ai",
 })
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted(cors_origins),
-    allow_origin_regex=r"https://([a-z0-9-]+\.)*vercel\.app|https://solsara\.ai",
+    allow_origin_regex=r"https://([a-z0-9-]+\.)*vercel\.app|https://(www\.)?solsara\.ai",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -104,6 +105,56 @@ def test_poll():
         tb = traceback.format_exc()
         print(tb)  # prints full error to console
         return {"error": str(e), "trace": tb}
+
+
+@app.get("/test/reviews-debug")
+def test_reviews_debug():
+    """
+    Diagnostic: show why reviews might be empty.
+    Note: Solsara fetches reviews that CUSTOMERS left on YOUR business.
+    Reviews you wrote on other businesses will never appear.
+    """
+    from ..db import supabase
+    from .services.google import get_reviews
+    import traceback
+
+    try:
+        rows = supabase.table("businesses").select(
+            "id, name, is_active, google_location_id"
+        ).eq("is_active", True).execute()
+        businesses = rows.data or []
+
+        if not businesses:
+            return {
+                "hint": "No active businesses. Complete onboarding and ensure is_active=true.",
+                "businesses": [],
+            }
+
+        out = []
+        for b in businesses:
+            try:
+                reviews = get_reviews(b)
+                out.append({
+                    "business_id": b["id"],
+                    "name": b.get("name", "?"),
+                    "location_id": b.get("google_location_id"),
+                    "reviews_fetched": len(reviews),
+                    "hint": "No Google Business Profile, or no locations, or location not verified."
+                    if len(reviews) == 0 else None,
+                })
+            except Exception as e:
+                out.append({
+                    "business_id": b["id"],
+                    "error": str(e),
+                    "trace": traceback.format_exc().split("\n")[-3:],
+                })
+
+        return {
+            "businesses": out,
+            "note": "Solsara only shows reviews left BY CUSTOMERS on YOUR business. Reviews you wrote elsewhere never appear.",
+        }
+    except Exception as e:
+        return {"error": str(e), "trace": traceback.format_exc()}
 
 
 app.include_router(calls_router)

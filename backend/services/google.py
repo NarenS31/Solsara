@@ -1,8 +1,11 @@
+import logging
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request, AuthorizedSession
 from ..db import supabase
 from ..config import settings
 from datetime import datetime, timezone
+
+logger = logging.getLogger("solsara.google")
 
 
 def get_credentials(business: dict) -> Credentials:
@@ -39,9 +42,23 @@ def get_credentials(business: dict) -> Credentials:
 def _get_json(session: AuthorizedSession, url: str, params: dict | None = None) -> dict:
     response = session.get(url, params=params)
     if response.status_code >= 400:
-        print(f"Google API error {response.status_code}: {response.text}")
+        logger.warning("google_api_error", extra={
+            "status": response.status_code,
+            "url": url,
+            "body": response.text[:500] if response.text else "",
+        })
         return {}
     return response.json() or {}
+
+
+def _fetch_location_title(session: AuthorizedSession, location_name: str) -> str | None:
+    """Fetch business title from Business Information API (location display name)."""
+    # v4 returns "accounts/X/locations/Y"; Business Info API expects "locations/Y"
+    if "/locations/" in location_name:
+        location_name = "locations/" + location_name.split("/locations/")[-1]
+    url = f"https://mybusinessbusinessinformation.googleapis.com/v1/{location_name}"
+    data = _get_json(session, url, params={"readMask": "title"})
+    return (data.get("title") or "").strip() or None
 
 
 def get_reviews(business: dict) -> list:
@@ -60,30 +77,56 @@ def get_reviews(business: dict) -> list:
     session = AuthorizedSession(credentials)
     base_url = "https://mybusiness.googleapis.com/v4"
 
-    accounts = _get_json(session, f"{base_url}/accounts").get("accounts", [])
+    accounts_resp = _get_json(session, f"{base_url}/accounts")
+    accounts = accounts_resp.get("accounts", [])
     if not accounts:
+        logger.warning("get_reviews_no_accounts", extra={
+            "business_id": business.get("id"),
+            "api_response_keys": list(accounts_resp.keys()) if accounts_resp else [],
+        })
         return []
 
     account_name = accounts[0]["name"]
+    logger.info("get_reviews_account_found", extra={"account": account_name})
 
-    locations = _get_json(
-        session, f"{base_url}/{account_name}/locations").get("locations", [])
+    locations_resp = _get_json(
+        session, f"{base_url}/{account_name}/locations")
+    locations = locations_resp.get("locations", [])
     if not locations:
+        logger.warning("get_reviews_no_locations", extra={
+            "business_id": business.get("id"),
+            "account": account_name,
+        })
         return []
 
     location_name = locations[0]["name"]
+    logger.info("get_reviews_location_found", extra={"location": location_name})
 
-    # saves location id to business record if not already there
+    # save location id and sync business name from Google when missing
+    update_fields = {}
     if not business.get("google_location_id"):
-        supabase.table("businesses").update({
-            "google_location_id": location_name
-        }).eq("id", business["id"]).execute()
+        update_fields["google_location_id"] = location_name
+    if not (business.get("name") or "").strip():
+        title = _fetch_location_title(session, location_name)
+        if title:
+            update_fields["name"] = title
+    if update_fields:
+        supabase.table("businesses").update(update_fields).eq(
+            "id", business["id"]
+        ).execute()
 
     # gets reviews for this location
     reviews_response = _get_json(
         session, f"{base_url}/{location_name}/reviews")
 
-    return reviews_response.get("reviews", [])
+    reviews = reviews_response.get("reviews", [])
+    total = reviews_response.get("totalReviewCount", len(reviews))
+    logger.info("get_reviews_done", extra={
+        "business_id": business.get("id"),
+        "reviews_returned": len(reviews),
+        "total_review_count": total,
+    })
+    return reviews
 
 
 def post_review_response(business: dict, review_name: str, response_text: str) -> bool:

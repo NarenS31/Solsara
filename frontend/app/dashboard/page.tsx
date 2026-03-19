@@ -72,6 +72,7 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [businessId, setBusinessId] = useState<string | null>(null);
+  const [businessName, setBusinessName] = useState<string | null>(null);
   
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,8 @@ function DashboardContent() {
   const [smsActionLoading, setSmsActionLoading] = useState(false);
   const [useExistingTwilio, setUseExistingTwilio] = useState(false);
   const [existingTwilioNumber, setExistingTwilioNumber] = useState("");
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const smsCharCount = defaultMessage.length;
 
@@ -171,6 +174,22 @@ function DashboardContent() {
     fetchReviews();
   }, [businessId]);
 
+  // Fetch business name for sidebar
+  useEffect(() => {
+    if (!businessId) {
+      setBusinessName(null);
+      return;
+    }
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    fetch(`${backendUrl}/businesses/${businessId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        const name = data?.business?.name;
+        setBusinessName(name && name.trim() ? name.trim() : null);
+      })
+      .catch(() => setBusinessName(null));
+  }, [businessId]);
+
   useEffect(() => {
     if (activeNav !== "missed" || !businessId) return;
 
@@ -238,7 +257,11 @@ function DashboardContent() {
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-white border-b border-black/[0.06]">
         <Link href="/" className="no-underline">
           <span className="text-[15px] font-black tracking-tight text-black">
-            Sol<span className="text-[#0055ff]">sara</span>
+            {businessName || (
+              <>
+                Sol<span className="text-[#0055ff]">sara</span>
+              </>
+            )}
           </span>
         </Link>
         <div className="flex items-center gap-2">
@@ -256,9 +279,18 @@ function DashboardContent() {
         {/* Logo + Back */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-black/[0.05]">
           <Link href="/" className="no-underline">
-            <span className="text-[15px] font-black tracking-tight text-black">
-              Sol<span className="text-[#0055ff]">sara</span>
-            </span>
+            <div>
+              <span className="text-[15px] font-black tracking-tight text-black block">
+                {businessName || (
+                  <>
+                    Sol<span className="text-[#0055ff]">sara</span>
+                  </>
+                )}
+              </span>
+              {businessName && (
+                <span className="text-[10px] font-medium text-black/40">Solsara</span>
+              )}
+            </div>
           </Link>
           <Link href="/" className="text-[13px] font-medium text-black/50 no-underline hover:underline">
             ← Back
@@ -303,16 +335,26 @@ function DashboardContent() {
           ))}
         </nav>
 
-        {/* Google status */}
-        <div className="border-t border-black/[0.05] px-5 py-4">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-            <span className="text-[11px] font-semibold text-emerald-600">Google connected</span>
+        {/* Google status + Subscribe */}
+        <div className="border-t border-black/[0.05] px-5 py-4 space-y-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-semibold text-emerald-600">Google connected</span>
+            </div>
+            <p className="mt-1 text-[10px] text-black/30">Last sync · 2 min ago</p>
           </div>
-          <p className="mt-1 text-[10px] text-black/30">Last sync · 2 min ago</p>
+          {businessId && (
+            <Link
+              href={`/onboarding?business_id=${businessId}&step=4`}
+              className="block w-full rounded-lg border border-[#0055ff]/30 bg-[#0055ff]/5 py-2.5 text-center text-[12px] font-semibold text-[#0055ff] no-underline transition hover:bg-[#0055ff]/10"
+            >
+              Subscribe — $149/mo
+            </Link>
+          )}
         </div>
       </aside>
 
@@ -386,15 +428,65 @@ function DashboardContent() {
             <div className="text-[32px] mb-3">📭</div>
             <p className="text-[14px] font-semibold text-black">No reviews yet</p>
             <p className="mt-2 text-[12px] text-black/40">
-              Once your Google Business Profile gets reviews, they'll appear here.
+              Reviews sync from your Google Business Profile. Click below to fetch them now.
             </p>
+            {syncError && (
+              <p className="mt-2 text-[12px] text-amber-600">{syncError}</p>
+            )}
+            <Button
+              className="mt-4 h-10 rounded-lg bg-[#0055ff] px-5 text-[13px] font-semibold text-white hover:bg-[#0044dd] disabled:opacity-60"
+              disabled={syncLoading}
+              onClick={async () => {
+                if (!businessId) return;
+                setSyncLoading(true);
+                setSyncError(null);
+                try {
+                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+                  const res = await fetch(`${backendUrl}/reviews/sync/${businessId}`, {
+                    method: "POST",
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok) {
+                    throw new Error(data.detail || data.message || "Sync failed");
+                  }
+                  // Refetch reviews
+                  const revRes = await fetch(`${backendUrl}/reviews?business_id=${businessId}&limit=50`);
+                  const revData = await revRes.json();
+                  if (revData.reviews?.length) {
+                    setReviews(revData.reviews.map((r: any) => ({
+                      id: r.id,
+                      reviewer: r.reviewer || "Anonymous",
+                      rating: r.rating || 0,
+                      comment: r.comment || "",
+                      time: r.time || "unknown",
+                      status: r.status || "posted",
+                      response: r.response || null,
+                      flagReason: r.flagReason,
+                    })));
+                  }
+                } catch (e) {
+                  setSyncError(e instanceof Error ? e.message : "Sync failed");
+                } finally {
+                  setSyncLoading(false);
+                }
+              }}
+            >
+              {syncLoading ? "Syncing…" : "Sync from Google"}
+            </Button>
             <p className="mt-4 text-[11px] text-black/30">
-              Need test data? Use this endpoint to seed demos:
-              <br />
-              <code className="mt-2 block bg-black/5 p-2 rounded text-[10px] font-mono">
+              Syncs run automatically every 30 min. Need test data?{" "}
+              <code className="rounded bg-black/5 px-1.5 py-0.5 text-[10px] font-mono">
                 POST /reviews/seed/{businessId}
               </code>
             </p>
+            {businessId && (
+              <Link
+                href={`/onboarding?business_id=${businessId}&step=4`}
+                className="mt-4 inline-block text-[12px] font-semibold text-[#0055ff] hover:underline"
+              >
+                Subscribe $149/mo →
+              </Link>
+            )}
           </div>
         )}
 

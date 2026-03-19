@@ -50,7 +50,7 @@ const STEPS = [
   { n: 1, label: "Account" },
   { n: 2, label: "Module" },
   { n: 3, label: "Setup" },
-  { n: 4, label: "Trial" },
+  { n: 4, label: "Subscribe" },
 ];
 
 function StepBar({ current }: { current: number }) {
@@ -716,16 +716,22 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
     setError("");
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/businesses/${businessId}/start-trial`, {
+      const res = await fetch(`${backendUrl}/checkout/${businessId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(`Trial start failed: ${res.status}`);
+        throw new Error(data.detail || `Checkout failed: ${res.status}`);
       }
-      onDone();
+      const url = data?.url;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      throw new Error("No checkout URL returned");
     } catch (e) {
-      setError("Could not start your free trial. Please try again.");
+      setError(e instanceof Error ? e.message : "Checkout failed. Please try again.");
       setLoading(false);
     }
   }
@@ -733,9 +739,9 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Start your plan</h2>
+        <h2 className="text-[24px] font-black tracking-[-0.04em] text-black">Subscribe</h2>
         <p className="mt-1.5 text-[14px] text-black/45 font-medium">
-          14-day free trial. No card today. We’ll prompt you to add billing before day 14.
+          Pay to activate. You'll be redirected to Stripe to complete payment.
         </p>
       </div>
 
@@ -749,9 +755,6 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
               <span className="text-[15px] font-medium text-black/35">/mo</span>
             </div>
           </div>
-          <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
-            14-day trial
-          </span>
         </div>
 
         <div className="border-t border-black/[0.05] pt-4 space-y-2">
@@ -795,7 +798,7 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
         </div>
       </div>
 
-      {/* Trial CTA */}
+      {/* Checkout CTA */}
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12px] font-semibold text-red-700">
           {error}
@@ -813,16 +816,16 @@ function StepPayment({ data, onDone, businessId }: { data: FormData; onDone: () 
               <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
               <path d="M8 2a6 6 0 0 1 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Starting trial...
+            Redirecting to payment...
           </span>
         ) : (
-          "Start free trial"
+          "Pay $149/mo — Subscribe"
         )}
       </button>
 
       {!businessId && (
         <p className="text-center text-[11px] text-black/35">
-          Connect Google first to start checkout.
+          Connect Google first to subscribe.
         </p>
       )}
 
@@ -886,8 +889,11 @@ function OnboardingContent() {
   const searchParams = useSearchParams();
   const businessIdFromUrl = searchParams.get("business_id");
   const googleConnectedFromUrl = searchParams.get("google") === "connected";
+  const stepFromUrl = searchParams.get("step");
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(
+    stepFromUrl === "4" && businessIdFromUrl ? 4 : 1
+  );
   const [dir, setDir] = useState(1);
   const [done, setDone] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(businessIdFromUrl);
@@ -930,7 +936,16 @@ function OnboardingContent() {
         // ignore storage errors
       }
       setBusinessId(businessIdFromUrl);
-      if (googleConnectedFromUrl) {
+      if (stepFromUrl === "4") {
+        setStep(4);
+        setForm((prev) => ({
+          ...prev,
+          googleConnected: true,
+          moduleChoice: prev.moduleChoice.includes("reviews")
+            ? prev.moduleChoice
+            : [...prev.moduleChoice, "reviews"],
+        }));
+      } else if (googleConnectedFromUrl) {
         setForm((prev) => ({
           ...prev,
           googleConnected: true,
@@ -942,7 +957,7 @@ function OnboardingContent() {
         setSetupIndex(0);
       }
     }
-  }, [businessIdFromUrl, googleConnectedFromUrl]);
+  }, [businessIdFromUrl, googleConnectedFromUrl, stepFromUrl]);
 
   useEffect(() => {
     if (businessId) return;

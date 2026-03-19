@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from ..db import supabase
 from ..services.llm import generate_response
+from ..services.poller import poll_business
 
 logger = logging.getLogger("solsara.reviews")
 
@@ -35,6 +36,35 @@ def _fmt_relative(iso_value: Optional[str]) -> str:
         return f"{seconds // 86400}d ago"
     except Exception:
         return "just now"
+
+
+@router.post("/sync/{business_id}")
+def sync_reviews(business_id: str):
+    """Trigger immediate sync of reviews from Google for this business."""
+    if not business_id:
+        raise HTTPException(status_code=400, detail="business_id is required")
+    result = supabase.table("businesses").select("*").eq(
+        "id", business_id
+    ).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Business not found")
+    business = result.data[0]
+    if not business.get("refresh_token"):
+        raise HTTPException(
+            status_code=400,
+            detail="Connect Google first to sync reviews",
+        )
+    try:
+        poll_result = poll_business(business)
+        return {
+            "ok": True,
+            "reviews_seen": poll_result.get("reviews_seen", 0),
+            "reviews_processed": poll_result.get("reviews_processed", 0),
+            "reviews_skipped": poll_result.get("reviews_skipped", 0),
+        }
+    except Exception as e:
+        logger.exception("sync_reviews_failed", extra={"business_id": business_id})
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("")

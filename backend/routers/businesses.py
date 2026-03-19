@@ -9,6 +9,18 @@ from ..db import supabase
 
 router = APIRouter(prefix="/businesses", tags=["businesses"])
 
+
+@router.get("/{business_id}")
+def get_business(business_id: str):
+    """Return basic business info for dashboard display."""
+    result = supabase.table("businesses").select("id, name").eq(
+        "id", business_id
+    ).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Business not found")
+    return {"business": result.data[0]}
+
+
 TONE_MAP = {
     "warm": "Warm and personal. Sounds like the owner writing at the end of a long day. Genuine, welcoming, not trying too hard.",
     "professional": "Professional and clear. Polished, business-appropriate, respectful, and still human.",
