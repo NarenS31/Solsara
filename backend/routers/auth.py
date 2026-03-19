@@ -169,7 +169,7 @@ def google_callback(code: str, request: Request, state: str = None):
         if google_user_id:
             try:
                 existing = supabase.table("businesses").select("id, refresh_token").eq(
-                    "google_user_id", google_user_id
+                    "google_user_id", str(google_user_id)
                 ).execute()
             except Exception:
                 # Column might not exist yet in some environments; continue with create flow.
@@ -200,11 +200,31 @@ def google_callback(code: str, request: Request, state: str = None):
             "is_active": False,
         }
         if google_user_id:
-            insert_data["google_user_id"] = google_user_id
+            insert_data["google_user_id"] = str(google_user_id)
 
         try:
             result = supabase.table("businesses").insert(insert_data).execute()
-        except Exception:
+        except Exception as insert_err:
+            err_str = str(insert_err)
+            code = getattr(insert_err, "code", None) or (
+                getattr(insert_err, "details", None) or {}
+            ).get("code", "")
+            # Duplicate google_user_id: treat as returning user, update existing row
+            is_dup = "23505" in err_str or code == "23505" or code == 23505
+            if is_dup and google_user_id:
+                logger.info("google_callback_duplicate_google_user_id_treating_as_returning")
+                existing = supabase.table("businesses").select("id").eq(
+                    "google_user_id", str(google_user_id)
+                ).limit(1).execute()
+                if existing and existing.data:
+                    business_id = existing.data[0]["id"]
+                    supabase.table("businesses").update({
+                        "access_token": credentials.token,
+                        "refresh_token": credentials.refresh_token,
+                        "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+                    }).eq("id", business_id).execute()
+                    redirect_url = f"{settings.frontend_url}/dashboard?business_id={business_id}"
+                    return RedirectResponse(url=redirect_url)
             # Fallback for older schema (missing google_user_id or required name field)
             logger.warning(
                 "google_callback_insert_with_google_user_id_failed_retrying")
