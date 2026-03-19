@@ -282,7 +282,7 @@ export default function Demo() {
               <span className="sm:hidden">Back</span>
             </Link>
             <Link
-              href="/api/auth/google"
+              href="/onboarding"
               className="h-9 rounded-full bg-black px-5 text-[12px] font-semibold text-white no-underline flex items-center hover:bg-black/85 transition-colors"
             >
               Start free trial →
@@ -535,7 +535,7 @@ export default function Demo() {
                 Put your reviews on autopilot. Setup takes 3 minutes.
               </p>
               <Link
-                href="/api/auth/google"
+                href="/onboarding"
                 className="block w-full rounded-lg bg-white py-3 text-center text-[13px] font-bold text-[#0055ff] no-underline hover:bg-white/95 transition-colors shadow-sm"
               >
                 Start free trial →

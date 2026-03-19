@@ -80,7 +80,7 @@ function NavAuthAndCta() {
               Log in
             </Link>
             <Link
-              href="/api/auth/google"
+              href="/onboarding"
               className="text-[13px] font-medium text-black/50 no-underline transition-colors hover:text-black py-1"
             >
               Sign up
@@ -376,7 +376,7 @@ const PLANS = [
     desc: "Review Automation + Reputation Dashboard. One location.",
     cta: "Start free trial",
     primary: true,
-    href: "/api/auth/google",
+    href: "/onboarding",
   },
 ];
 
@@ -428,7 +428,7 @@ export default function Landing() {
           {/* CTAs */}
           <motion.div variants={fadeUp} className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/api/auth/google"
+              href="/onboarding"
               className="inline-flex h-12 items-center rounded-full bg-black px-7 text-[13px] font-semibold text-white no-underline transition-all hover:bg-black/85 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2"
             >
               Start your 14-day free trial →
@@ -572,7 +572,7 @@ export default function Landing() {
             </p>
 
             <div className="mx-auto max-w-[460px]">
-              <Link href="/api/auth/google" className="no-underline">
+              <Link href="/onboarding" className="no-underline">
                 <button
                   className="h-14 w-full rounded-full bg-white text-[#0055ff] font-semibold text-[14px] hover:bg-white/90 transition-colors"
                 >
