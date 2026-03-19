@@ -1,3 +1,4 @@
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
@@ -49,6 +50,34 @@ def create_flow():
     return flow
 
 
+def _pack_state(original_state: str | None) -> tuple[str, str]:
+    """Pack code_verifier into state so we don't need cookies. Returns (packed_state, code_verifier)."""
+    code_verifier = secrets.token_urlsafe(32)
+    packed = f"pkce:{urlsafe_b64encode(code_verifier.encode()).decode()}"
+    if original_state:
+        packed += f":{original_state}"
+    return packed, code_verifier
+
+
+def _unpack_state(state: str | None) -> tuple[str | None, str | None]:
+    """Extract code_verifier and original state. Returns (code_verifier, original_state)."""
+    if not state or not state.startswith("pkce:"):
+        return None, state
+    parts = state.split(":", 2)
+    if len(parts) < 2:
+        return None, state
+    try:
+        raw = parts[1]
+        pad = 4 - len(raw) % 4
+        if pad != 4:
+            raw += "=" * pad
+        verifier = urlsafe_b64decode(raw).decode()
+    except Exception:
+        return None, state
+    original = parts[2] if len(parts) > 2 else None
+    return verifier, original
+
+
 @router.get("/google")
 def google_login(state: str = None):
     if not settings.google_client_id or not settings.google_client_secret:
@@ -57,20 +86,18 @@ def google_login(state: str = None):
             status_code=500, detail="Google OAuth is not configured")
 
     flow = create_flow()
+    packed_state, code_verifier = _pack_state(state)
+    flow.code_verifier = code_verifier
 
-    # generates the Google login URL
-    # access_type=offline gets us a refresh token
-    # prompt=consent forces Google to always give us a refresh token
-    # without prompt=consent returning users won't get a refresh token
-    authorization_url, state = flow.authorization_url(
+    authorization_url, _ = flow.authorization_url(
         access_type="offline",
         prompt="consent",
-        state=state,
+        state=packed_state,
+        code_challenge_method="S256",
     )
 
-    logger.info("google_login_redirect", extra={"state": state})
+    logger.info("google_login_redirect", extra={"state_len": len(packed_state)})
 
-    # redirects business owner to Google's login page
     return RedirectResponse(authorization_url)
 
 
@@ -92,8 +119,15 @@ def _get_google_user_id(credentials) -> str | None:
 @router.get("/callback")
 def google_callback(code: str, request: Request, state: str = None):
     try:
-        logger.info("google_callback_start", extra={"state": state})
+        logger.info("google_callback_start", extra={"state_len": len(state or "")})
+        code_verifier, original_state = _unpack_state(state)
+        if not code_verifier:
+            return RedirectResponse(
+                url=f"{settings.frontend_url}/login?error=oauth_failed&reason=invalid_state&detail="
+                + quote("Please go to the login page and click Sign in with Google again.")
+            )
         flow = create_flow()
+        flow.code_verifier = code_verifier
         flow.fetch_token(code=code)
         credentials = flow.credentials
         google_user_id = _get_google_user_id(credentials)
@@ -111,8 +145,8 @@ def google_callback(code: str, request: Request, state: str = None):
             return resp
 
         # If a business_id was provided in OAuth state, attach tokens to it
-        if state and state.startswith("bid:"):
-            business_id = state.replace("bid:", "", 1)
+        if original_state and original_state.startswith("bid:"):
+            business_id = original_state.replace("bid:", "", 1)
             update_data = {
                 "access_token": credentials.token,
                 "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
@@ -156,7 +190,6 @@ def google_callback(code: str, request: Request, state: str = None):
                 logger.info("google_callback_existing_business",
                             extra={"business_id": business_id})
                 resp = RedirectResponse(url=redirect_url)
-                resp.delete_cookie("oauth_code_verifier")
                 return resp
 
         # New user: create business with google_user_id
