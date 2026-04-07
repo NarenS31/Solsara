@@ -114,7 +114,7 @@ def test_reviews_debug():
     Note: Solsara fetches reviews that CUSTOMERS left on YOUR business.
     Reviews you wrote on other businesses will never appear.
     """
-    from ..db import supabase
+    from .db import supabase
     from .services.google import get_reviews
     import traceback
 

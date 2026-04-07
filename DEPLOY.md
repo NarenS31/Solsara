@@ -9,7 +9,10 @@ Follow these steps **in order** to deploy the backend to Railway and wire up OAu
 1. Go to [railway.app](https://railway.app) and sign in.
 2. **New project** → **Deploy from GitHub repo**
 3. Select your Solsara repo.
-4. **Root Directory**: Set to `backend` (so Railway builds from the backend folder).
+4. **Root Directory** (pick one; both work with this repo):
+   - **`backend`** — uses `backend/railway.json`. The start command sets `PYTHONPATH=..` and runs `uvicorn backend.main:app` so package imports work.
+   - **`.` (repo root)** — uses root `railway.json` and `uvicorn backend.main:app`. Nixpacks will use the root `requirements.txt`.
+   Do **not** use `uvicorn main:app` from the `backend` folder alone; it will crash on relative imports during deploy.
 5. Add all environment variables in **Variables** (see list below).
 6. Deploy. Railway will give you a URL like:
    ```
