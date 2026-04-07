@@ -9,8 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy app into backend/ so "backend" is a proper package (needed for relative imports)
 COPY . ./backend
 
-# Railway sets PORT; default to 8000 for local
 ENV PORT=8000
-EXPOSE $PORT
+EXPOSE 8000
 
-CMD uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+CMD ["sh", "-c", "exec uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
