@@ -1,31 +1,84 @@
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import Response
 from ..db import supabase
+from ..config import settings
 from ..services.twilio_service import (
     provision_number,
     release_number,
     send_missed_call_sms,
     forward_reply_to_owner,
     build_forward_twiml,
-    attach_existing_number
+    attach_existing_number,
+    normalize_us_number
 )
 from datetime import datetime, timezone
-import re
+import logging
+from twilio.request_validator import RequestValidator
 
 router = APIRouter()
+logger = logging.getLogger("solsara.calls")
 
 
 def _normalize_us_number(value: str) -> str:
-    if not value:
-        return ""
-    digits = re.sub(r"\D", "", value)
-    if digits.startswith("1") and len(digits) == 11:
-        return f"+{digits}"
-    if len(digits) == 10:
-        return f"+1{digits}"
-    if value.startswith("+") and len(digits) >= 10:
-        return f"+{digits}"
-    raise HTTPException(status_code=400, detail="Invalid phone number format")
+    try:
+        return normalize_us_number(value)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid phone number format")
+
+
+def _is_duplicate_key_error(err: Exception) -> bool:
+    err_str = str(err)
+    if "23505" in err_str:
+        return True
+    code = getattr(err, "code", None)
+    if code in ("23505", 23505):
+        return True
+    details = getattr(err, "details", None)
+    if isinstance(details, dict) and details.get("code") in ("23505", 23505):
+        return True
+    return False
+
+
+def _twiml_empty() -> Response:
+    return Response(
+        content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
+        media_type="application/xml"
+    )
+
+
+def _twiml_hangup() -> Response:
+    return Response(
+        content="<?xml version='1.0' encoding='UTF-8'?><Response><Hangup/></Response>",
+        media_type="application/xml"
+    )
+
+
+def _validate_twilio_signature(request: Request, form: dict) -> bool:
+    validator = RequestValidator(settings.twilio_auth_token or "")
+    signature = request.headers.get("X-Twilio-Signature", "")
+    if not signature:
+        return False
+    return validator.validate(str(request.url), form, signature)
+
+
+def _event_already_processed(event_sid: str, event_type: str) -> bool:
+    result = supabase.table("twilio_webhook_events").select("id").eq(
+        "event_sid", event_sid
+    ).eq("event_type", event_type).limit(1).execute()
+    return bool(result.data)
+
+
+def _mark_event_processed(event_sid: str, event_type: str, business_id: str | None = None):
+    try:
+        supabase.table("twilio_webhook_events").insert({
+            "event_sid": event_sid,
+            "event_type": event_type,
+            "business_id": business_id,
+        }).execute()
+    except Exception as e:
+        if _is_duplicate_key_error(e):
+            return
+        raise
 
 
 @router.post("/calls/incoming")
@@ -33,9 +86,23 @@ async def incoming_call(request: Request):
     # Twilio hits this when a call comes in to any of our numbers
     # we return TwiML telling Twilio to forward the call
     form = await request.form()
+    form_data = dict(form)
+
+    if not _validate_twilio_signature(request, form_data):
+        logger.warning("incoming_call_invalid_signature")
+        return _twiml_hangup()
 
     # which Twilio number was called
-    called_number = form.get("To")
+    called_number_raw = form.get("To")
+    call_sid = form.get("CallSid")
+    if call_sid and _event_already_processed(call_sid, "incoming"):
+        logger.info("incoming_call_duplicate_skipped", extra={"call_sid": call_sid})
+        return _twiml_empty()
+    try:
+        called_number = normalize_us_number(called_number_raw)
+    except Exception:
+        logger.warning("incoming_call_invalid_to_number", extra={"to": called_number_raw})
+        return _twiml_hangup()
 
     # finds which business owns this number
     result = supabase.table("businesses").select("*").eq(
@@ -43,17 +110,18 @@ async def incoming_call(request: Request):
     ).execute()
 
     if not result.data:
-        # unknown number — just hang up
-        return Response(
-            content="<?xml version='1.0' encoding='UTF-8'?><Response><Hangup/></Response>",
-            media_type="application/xml"
-        )
+        logger.info("incoming_call_unprovisioned_number", extra={"to": called_number})
+        if call_sid:
+            _mark_event_processed(call_sid, "incoming")
+        return _twiml_hangup()
 
     business = result.data[0]
     real_number = business["real_number"]
 
     # builds TwiML to forward the call to their real number
     twiml = build_forward_twiml(real_number)
+    if call_sid:
+        _mark_event_processed(call_sid, "incoming", business.get("id"))
 
     # must return XML — Twilio only understands TwiML not JSON
     return Response(content=twiml, media_type="application/xml")
@@ -64,18 +132,35 @@ async def call_status(request: Request):
     # Twilio hits this after a call ends or goes unanswered
     # this is where we detect missed calls
     form = await request.form()
+    form_data = dict(form)
+    if not _validate_twilio_signature(request, form_data):
+        logger.warning("call_status_invalid_signature")
+        return _twiml_empty()
 
     dial_status = form.get("DialCallStatus")
-    caller_number = form.get("From")
-    called_number = form.get("To")
+    caller_number_raw = form.get("From")
+    called_number_raw = form.get("To")
+    call_sid = form.get("CallSid")
+
+    if call_sid and _event_already_processed(call_sid, "status"):
+        logger.info("call_status_duplicate_skipped", extra={"call_sid": call_sid})
+        return _twiml_empty()
+    try:
+        caller_number = normalize_us_number(caller_number_raw)
+        called_number = normalize_us_number(called_number_raw)
+    except Exception:
+        logger.warning("call_status_invalid_numbers", extra={
+                       "from": caller_number_raw, "to": called_number_raw})
+        if call_sid:
+            _mark_event_processed(call_sid, "status")
+        return _twiml_empty()
 
     # DialCallStatus is "no-answer" or "busy" when nobody picks up
     # "completed" means someone answered — not a missed call
     if dial_status not in ["no-answer", "busy", "failed"]:
-        return Response(
-            content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
-            media_type="application/xml"
-        )
+        if call_sid:
+            _mark_event_processed(call_sid, "status")
+        return _twiml_empty()
 
     # finds the business that owns this Twilio number
     result = supabase.table("businesses").select("*").eq(
@@ -83,10 +168,10 @@ async def call_status(request: Request):
     ).execute()
 
     if not result.data:
-        return Response(
-            content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
-            media_type="application/xml"
-        )
+        logger.info("call_status_unprovisioned_number", extra={"to": called_number})
+        if call_sid:
+            _mark_event_processed(call_sid, "status")
+        return _twiml_empty()
 
     business = result.data[0]
 
@@ -101,18 +186,16 @@ async def call_status(request: Request):
     }).execute()
 
     if not missed_call.data:
-        return Response(
-            content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
-            media_type="application/xml"
-        )
+        if call_sid:
+            _mark_event_processed(call_sid, "status", business.get("id"))
+        return _twiml_empty()
 
     missed_call_id = missed_call.data[0]["id"]
 
     if business.get("missed_call_paused"):
-        return Response(
-            content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
-            media_type="application/xml"
-        )
+        if call_sid:
+            _mark_event_processed(call_sid, "status", business.get("id"))
+        return _twiml_empty()
 
     # gets the business's custom message if they set one
     custom_message = business.get("missed_call_message")
@@ -134,23 +217,41 @@ async def call_status(request: Request):
         }).eq("id", missed_call_id).execute()
 
     except Exception as e:
-        print(f"Failed to send missed call SMS: {e}")
+        logger.exception("call_status_sms_send_failed", extra={
+                         "business_id": business.get("id"), "caller_number": caller_number, "twilio_number": called_number})
 
     # must return valid TwiML even if we're done
-    return Response(
-        content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
-        media_type="application/xml"
-    )
+    if call_sid:
+        _mark_event_processed(call_sid, "status", business.get("id"))
+    return _twiml_empty()
 
 
 @router.post("/calls/reply")
 async def incoming_sms_reply(request: Request):
     # Twilio hits this when a caller replies to the missed call SMS
     form = await request.form()
+    form_data = dict(form)
+    if not _validate_twilio_signature(request, form_data):
+        logger.warning("incoming_sms_reply_invalid_signature")
+        return _twiml_empty()
 
-    caller_number = form.get("From")
-    twilio_number = form.get("To")
+    caller_number_raw = form.get("From")
+    twilio_number_raw = form.get("To")
     reply_text = form.get("Body")
+    message_sid = form.get("MessageSid")
+
+    if message_sid and _event_already_processed(message_sid, "sms_reply"):
+        logger.info("incoming_sms_reply_duplicate_skipped", extra={"message_sid": message_sid})
+        return _twiml_empty()
+    try:
+        caller_number = normalize_us_number(caller_number_raw)
+        twilio_number = normalize_us_number(twilio_number_raw)
+    except Exception:
+        logger.warning("incoming_sms_reply_invalid_numbers", extra={
+                       "from": caller_number_raw, "to": twilio_number_raw})
+        if message_sid:
+            _mark_event_processed(message_sid, "sms_reply")
+        return _twiml_empty()
 
     # finds the business
     result = supabase.table("businesses").select("*").eq(
@@ -158,10 +259,10 @@ async def incoming_sms_reply(request: Request):
     ).execute()
 
     if not result.data:
-        return Response(
-            content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
-            media_type="application/xml"
-        )
+        logger.info("incoming_sms_reply_unprovisioned_number", extra={"to": twilio_number})
+        if message_sid:
+            _mark_event_processed(message_sid, "sms_reply")
+        return _twiml_empty()
 
     business = result.data[0]
 
@@ -179,10 +280,15 @@ async def incoming_sms_reply(request: Request):
             owner_number=business["real_number"],
             caller_number=caller_number,
             reply_text=reply_text,
-            business_name=business.get("name", "your business")
+            business_name=business.get("name", "your business"),
+            twilio_number=twilio_number,
         )
     except Exception as e:
-        print(f"Failed to forward reply: {e}")
+        logger.exception("incoming_sms_reply_forward_failed", extra={
+                         "business_id": business.get("id"), "caller_number": caller_number, "twilio_number": twilio_number})
+
+    if message_sid:
+        _mark_event_processed(message_sid, "sms_reply", business.get("id"))
 
     # sends confirmation back to the caller
     return Response(
@@ -383,6 +489,7 @@ async def send_test_message(business_id: str, request: Request):
     if not twilio_number:
         raise HTTPException(
             status_code=400, detail="Twilio number not provisioned")
+    twilio_number = _normalize_us_number(twilio_number)
 
     try:
         send_missed_call_sms(

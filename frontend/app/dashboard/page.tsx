@@ -78,8 +78,10 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeNav, setActiveNav] = useState("reviews");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
+  const [reviewActionLoadingId, setReviewActionLoadingId] = useState<string | null>(null);
+  const [reviewActionError, setReviewActionError] = useState<string | null>(null);
   const [smsSetupComplete, setSmsSetupComplete] = useState(false);
   const [smsStep, setSmsStep] = useState(1);
   const [businessPhone, setBusinessPhone] = useState("");
@@ -244,10 +246,68 @@ function DashboardContent() {
     ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1)
     : "0.0";
 
-  function approve(id: number) {
-    setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, status: "posted", response: editText } : r)));
-    setEditingId(null);
-    setEditText("");
+  async function approve(id: string) {
+    if (!businessId) {
+      setReviewActionError("No business selected");
+      return;
+    }
+
+    const responseText = editText.trim();
+    if (!responseText) {
+      setReviewActionError("Response text is required");
+      return;
+    }
+
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    setReviewActionLoadingId(id);
+    setReviewActionError(null);
+
+    try {
+      const res = await fetch(`${backendUrl}/reviews/${id}/reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          business_id: businessId,
+          response: responseText,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.detail || `Failed to post response (${res.status})`);
+      }
+
+      // Source of truth refresh after successful write.
+      const reviewsRes = await fetch(`${backendUrl}/reviews?business_id=${businessId}&limit=50`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!reviewsRes.ok) {
+        throw new Error(`Reply saved but refresh failed (${reviewsRes.status})`);
+      }
+      const reviewsData = await reviewsRes.json();
+      if (reviewsData.reviews && Array.isArray(reviewsData.reviews)) {
+        const normalizedReviews = reviewsData.reviews.map((r: any) => ({
+          id: r.id,
+          reviewer: r.reviewer || "Anonymous",
+          rating: r.rating || 0,
+          comment: r.comment || "",
+          time: r.time || "unknown",
+          status: r.status || "posted",
+          response: r.response || null,
+          flagReason: r.flagReason || undefined,
+        }));
+        setReviews(normalizedReviews);
+      } else {
+        setReviews([]);
+      }
+      setEditingId(null);
+      setEditText("");
+    } catch (err) {
+      // Keep current UI/edit state as-is so nothing is falsely shown as persisted.
+      setReviewActionError(err instanceof Error ? err.message : "Failed to save response");
+    } finally {
+      setReviewActionLoadingId(null);
+    }
   }
 
   return (
@@ -581,9 +641,10 @@ function DashboardContent() {
                               <div className="flex gap-2">
                                 <Button
                                   onClick={() => approve(review.id)}
-                                  className="h-9 rounded-lg bg-[#0055ff] text-[12px] font-semibold text-white hover:bg-[#0044dd]"
+                                  disabled={reviewActionLoadingId === review.id}
+                                  className="h-9 rounded-lg bg-[#0055ff] text-[12px] font-semibold text-white hover:bg-[#0044dd] disabled:opacity-60"
                                 >
-                                  Post response
+                                  {reviewActionLoadingId === review.id ? "Posting..." : "Post response"}
                                 </Button>
                                 <Button
                                   variant="outline"
@@ -593,10 +654,13 @@ function DashboardContent() {
                                   Cancel
                                 </Button>
                               </div>
+                              {reviewActionError && (
+                                <p className="text-[12px] font-medium text-red-600">{reviewActionError}</p>
+                              )}
                             </div>
                           ) : (
                             <Button
-                              onClick={() => { setEditingId(review.id); setEditText(""); }}
+                              onClick={() => { setEditingId(review.id); setEditText(review.response || ""); setReviewActionError(null); }}
                               className="h-9 rounded-lg bg-[#0055ff] text-[12px] font-semibold text-white hover:bg-[#0044dd]"
                             >
                               Write response

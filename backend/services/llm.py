@@ -1,9 +1,19 @@
-import json
+import logging
 from typing import List, Optional
+import instructor
 from anthropic import Anthropic
+from pydantic import BaseModel, Field
 from ..config import settings
 
-client = Anthropic(api_key=settings.anthropic_api_key)
+logger = logging.getLogger("solsara.llm")
+client = instructor.from_anthropic(
+    Anthropic(api_key=settings.anthropic_api_key)
+)
+
+
+class LLMResponse(BaseModel):
+    response: str = Field(min_length=1)
+    confidence: float = Field(ge=0.0, le=1.0)
 
 
 def generate_response(
@@ -117,23 +127,33 @@ Here are some real responses this business has posted before —
 match this voice exactly:
 {chr(10).join(cleaned)}"""
 
-    result = client.messages.create(
-        model="claude-sonnet-4-5",
-        max_tokens=220,
-        temperature=0.7,
-        messages=[{"role": "user", "content": prompt}]
-    )
-
     try:
-        content = result.content[0].text if result.content else "{}"
-        data = json.loads(content)
+        result = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=220,
+            temperature=0.7,
+            messages=[{"role": "user", "content": prompt}],
+            response_model=LLMResponse,
+        )
         return {
-            "response": data.get("response", ""),
-            "confidence": float(data.get("confidence", 0.5))
+            "response": result.response,
+            "confidence": float(result.confidence),
         }
     except Exception as e:
-        print(f"LLM parsing error: {e}")
+        logger.exception(
+            "llm_generation_failed",
+            extra={
+                "business_name": business_name,
+                "reviewer_name": reviewer_name,
+                "rating": rating,
+            },
+        )
+        fallback_response = (
+            f"{reviewer_name}, thanks for taking the time to leave a review. "
+            "We appreciate the feedback and will follow up directly if needed."
+        )
         return {
-            "response": "",
-            "confidence": 0.0
+            "response": fallback_response,
+            "confidence": 0.0,
+            "fallback_reason": str(type(e).__name__),
         }

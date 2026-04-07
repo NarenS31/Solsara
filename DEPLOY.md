@@ -24,18 +24,23 @@ Copy these from your `.env` and adjust for production:
 |----------|------------------|
 | `APP_ENV` | `production` |
 | `SECRET_KEY` | (same as local) |
+| `FRONTEND_URL` | `https://solsara.ai` |
+| `DEV_MODE` | `false` |
+| `ALLOWED_ORIGINS` | `["https://solsara.ai","https://www.solsara.ai","https://solsara.vercel.app"]` |
 | `SUPABASE_URL` | (same as local) |
 | `SUPABASE_KEY` | (same as local) |
 | `GOOGLE_CLIENT_ID` | (same as local) |
 | `GOOGLE_CLIENT_SECRET` | (same as local) |
 | `GOOGLE_REDIRECT_URI` | `https://solsara-production.up.railway.app/auth/callback` |
-| `FRONTEND_URL` | `https://solsara.app` |
+| `ANTHROPIC_API_KEY` | (same as local) |
 | `OPENAI_API_KEY` | (same as local) |
 | `STRIPE_SECRET_KEY` | (same as local) |
 | `STRIPE_WEBHOOK_SECRET` | (same as local) |
+| `STRIPE_PRICE_ID` | (same as local) |
 | `RESEND_API_KEY` | (same as local, or leave empty) |
-| `DEV_MODE` | `false` |
-| `ALLOWED_ORIGINS` | `["https://solsara.app"]` |
+| `TWILIO_ACCOUNT_SID` | (same as local, if using Missed Call Net) |
+| `TWILIO_AUTH_TOKEN` | (same as local, if using Missed Call Net) |
+| `RAILWAY_URL` | `https://solsara-production.up.railway.app` |
 
 ---
 
@@ -56,7 +61,7 @@ Copy these from your `.env` and adjust for production:
 Ensure these are set in Railway:
 
 - `GOOGLE_REDIRECT_URI` = `https://solsara-production.up.railway.app/auth/callback`
-- `FRONTEND_URL` = `https://solsara.app`
+- `FRONTEND_URL` = `https://solsara.ai`
 
 ---
 

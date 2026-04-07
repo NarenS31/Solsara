@@ -112,14 +112,31 @@ NEXT_PUBLIC_BACKEND_URL=https://solsara-production.up.railway.app
 ### Railway (Backend)
 
 ```
+APP_ENV=production
+SECRET_KEY=<random string>
+FRONTEND_URL=https://solsara.ai
+DEV_MODE=false
+ALLOWED_ORIGINS=["https://solsara.ai","https://www.solsara.ai","https://solsara.vercel.app"]
+
 GOOGLE_CLIENT_ID=<from Google Cloud Console>
 GOOGLE_CLIENT_SECRET=<from Google Cloud Console>
+GOOGLE_REDIRECT_URI=https://solsara-production.up.railway.app/auth/callback
+
 SUPABASE_URL=<from Supabase dashboard>
-SUPABASE_SERVICE_ROLE_KEY=<from Supabase settings>
-STRIPE_WEBHOOK_SECRET=<from Stripe dashboard>
-RESEND_API_KEY=<from Resend dashboard>
+SUPABASE_KEY=<from Supabase settings>
+
+ANTHROPIC_API_KEY=<from Anthropic dashboard>
 OPENAI_API_KEY=<from OpenAI dashboard>
-JWT_SECRET=<random string>
+
+STRIPE_SECRET_KEY=<from Stripe dashboard>
+STRIPE_WEBHOOK_SECRET=<from Stripe dashboard>
+STRIPE_PRICE_ID=<from Stripe product price>
+
+RESEND_API_KEY=<from Resend dashboard>
+
+TWILIO_ACCOUNT_SID=<from Twilio console>
+TWILIO_AUTH_TOKEN=<from Twilio console>
+RAILWAY_URL=https://solsara-production.up.railway.app
 ```
 
 ---

@@ -66,6 +66,7 @@ google-auth-httplib2
 google-api-python-client
 openai
 anthropic
+instructor
 stripe
 resend
 apscheduler

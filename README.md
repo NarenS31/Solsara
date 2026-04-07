@@ -67,9 +67,12 @@ pip install -r backend/requirements.txt
 cp backend/.env.example backend/.env
 # Edit backend/.env with your credentials:
 # - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
-# - SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-# - OPENAI_API_KEY
-# - STRIPE_WEBHOOK_SECRET, RESEND_API_KEY
+# - SUPABASE_URL, SUPABASE_KEY
+# - GOOGLE_REDIRECT_URI, FRONTEND_URL
+# - ANTHROPIC_API_KEY, OPENAI_API_KEY
+# - STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID
+# - TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, RAILWAY_URL
+# - RESEND_API_KEY
 
 # Run locally
 cd backend && python -m uvicorn main:app --reload --port 8000
@@ -188,6 +191,52 @@ npm test --prefix frontend
 
 - Auto-deploys on push to `main`
 - Requires `NEXT_PUBLIC_BACKEND_URL` in Vercel env vars
+
+## 🔐 Environment Variables (Canonical)
+
+### Backend (`backend/.env` for local, Railway vars in production)
+
+- **App/Core**
+  - `APP_ENV`
+  - `SECRET_KEY`
+  - `FRONTEND_URL`
+  - `DEV_MODE`
+  - `ALLOWED_ORIGINS`
+- **Supabase**
+  - `SUPABASE_URL`
+  - `SUPABASE_KEY`
+- **Google OAuth**
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+  - `GOOGLE_REDIRECT_URI`
+- **LLM**
+  - `ANTHROPIC_API_KEY` (core review reply generation)
+  - `OPENAI_API_KEY` (demo generation route)
+- **Stripe**
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
+  - `STRIPE_PRICE_ID`
+- **Email**
+  - `RESEND_API_KEY`
+- **Twilio**
+  - `TWILIO_ACCOUNT_SID`
+  - `TWILIO_AUTH_TOKEN`
+  - `RAILWAY_URL`
+
+### Frontend (`frontend/.env.local` and Vercel env vars)
+
+- **Client-side**
+  - `NEXT_PUBLIC_BACKEND_URL`
+- **Server-side frontend API routes (if used)**
+  - `BACKEND_URL`
+  - `SUPABASE_URL`
+  - `SUPABASE_KEY`
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+  - `GOOGLE_REDIRECT_URI`
+  - `OPENAI_API_KEY`
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
 
 ## 🐛 Troubleshooting
 

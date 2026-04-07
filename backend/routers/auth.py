@@ -50,6 +50,48 @@ def create_flow():
     return flow
 
 
+def _oauth_error_redirect(reason: str, detail: str = ""):
+    safe_reason = quote(reason) if reason else "oauth_failed"
+    safe_redirect = f"{settings.frontend_url}/login?error=oauth_failed&reason={safe_reason}"
+    if detail:
+        safe_redirect = f"{safe_redirect}&detail={quote(detail[:180])}"
+    return RedirectResponse(url=safe_redirect)
+
+
+def _best_effort_sync_reviews(business_id: str):
+    """Try to kick off initial review sync after OAuth success."""
+    try:
+        from ..services.poller import poll_business
+        row = supabase.table("businesses").select("*").eq("id", business_id).limit(1).execute()
+        if row and row.data:
+            poll_business(row.data[0])
+            logger.info("oauth_post_connect_sync_done",
+                        extra={"business_id": business_id})
+    except Exception:
+        # Non-fatal: OAuth success should not fail due to sync problems.
+        logger.warning("oauth_post_connect_sync_failed",
+                       extra={"business_id": business_id})
+
+
+def _upsert_business_for_google_user(credentials, google_user_id: str):
+    """Race-safe upsert by unique google_user_id for returning/new users."""
+    upsert_data = {
+        "google_user_id": str(google_user_id),
+        "access_token": credentials.token,
+        "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
+        "is_active": False,
+    }
+    if credentials.refresh_token:
+        upsert_data["refresh_token"] = credentials.refresh_token
+
+    result = supabase.table("businesses").upsert(
+        upsert_data, on_conflict="google_user_id"
+    ).execute()
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Failed to upsert business")
+    return result.data[0]["id"]
+
+
 def _pack_state(original_state: str | None) -> tuple[str, str]:
     """Pack code_verifier into state so we don't need cookies. Returns (packed_state, code_verifier)."""
     code_verifier = secrets.token_urlsafe(32)
@@ -92,6 +134,7 @@ def google_login(state: str = None):
     authorization_url, _ = flow.authorization_url(
         access_type="offline",
         prompt="consent",
+        force_approval_prompt="true",
         state=packed_state,
         code_challenge_method="S256",
     )
@@ -131,14 +174,20 @@ def _get_google_user_id(credentials) -> str | None:
 
 
 @router.get("/callback")
-def google_callback(code: str, request: Request, state: str = None):
+def google_callback(request: Request, code: str | None = None, state: str = None):
     try:
+        if not code:
+            return _oauth_error_redirect(
+                reason="missing_code",
+                detail="Google did not return an authorization code. Please sign in again.",
+            )
+
         logger.info("google_callback_start", extra={"state_len": len(state or "")})
         code_verifier, original_state = _unpack_state(state)
         if not code_verifier:
-            return RedirectResponse(
-                url=f"{settings.frontend_url}/login?error=oauth_failed&reason=invalid_state&detail="
-                + quote("Please go to the login page and click Sign in with Google again.")
+            return _oauth_error_redirect(
+                reason="invalid_state",
+                detail="Please go to the login page and click Sign in with Google again.",
             )
         flow = create_flow()
         flow.code_verifier = code_verifier
@@ -152,11 +201,10 @@ def google_callback(code: str, request: Request, state: str = None):
                 "google_user_id": google_user_id,
                 "has_token": bool(credentials.token),
             })
-            resp = RedirectResponse(
-                url=f"{settings.frontend_url}/login?error=oauth_failed&reason=no_refresh_token&detail="
-                + quote("Google did not grant offline access. Please go to myaccount.google.com/permissions, remove Solsara, then sign in again.")
+            return _oauth_error_redirect(
+                reason="no_refresh_token",
+                detail="Google did not grant offline access. Please go to myaccount.google.com/permissions, remove Solsara, then sign in again.",
             )
-            return resp
 
         # If a business_id was provided in OAuth state, attach tokens to it
         if original_state and original_state.startswith("bid:"):
@@ -174,6 +222,7 @@ def google_callback(code: str, request: Request, state: str = None):
                 updated = supabase.table("businesses").update(update_data).eq(
                     "id", business_id).execute()
                 if updated.data:
+                    _best_effort_sync_reviews(business_id)
                     redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}&google=connected"
                     logger.info("google_callback_attached_business",
                                 extra={"business_id": business_id})
@@ -195,6 +244,7 @@ def google_callback(code: str, request: Request, state: str = None):
                         if credentials.refresh_token:
                             tok_update["refresh_token"] = credentials.refresh_token
                         supabase.table("businesses").update(tok_update).eq("id", existing_id).execute()
+                        _best_effort_sync_reviews(existing_id)
                         return RedirectResponse(
                             url=f"{settings.frontend_url}/dashboard?business_id={existing_id}"
                         )
@@ -203,29 +253,16 @@ def google_callback(code: str, request: Request, state: str = None):
         # Returning user: find existing business by google_user_id
         if google_user_id:
             try:
-                existing = supabase.table("businesses").select("id, refresh_token").eq(
-                    "google_user_id", str(google_user_id)
-                ).execute()
-            except Exception:
-                # Column might not exist yet in some environments; continue with create flow.
-                logger.warning("google_callback_lookup_google_user_id_failed")
-                existing = None
-            if existing and existing.data and len(existing.data) > 0:
-                business_id = existing.data[0]["id"]
-                # Update tokens (keep existing refresh_token if Google didn't return a new one)
-                update_data = {
-                    "access_token": credentials.token,
-                    "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None,
-                }
-                if credentials.refresh_token:
-                    update_data["refresh_token"] = credentials.refresh_token
-                supabase.table("businesses").update(
-                    update_data).eq("id", business_id).execute()
+                business_id = _upsert_business_for_google_user(
+                    credentials, str(google_user_id))
+                _best_effort_sync_reviews(business_id)
                 redirect_url = f"{settings.frontend_url}/dashboard?business_id={business_id}"
-                logger.info("google_callback_existing_business",
+                logger.info("google_callback_upsert_business",
                             extra={"business_id": business_id})
-                resp = RedirectResponse(url=redirect_url)
-                return resp
+                return RedirectResponse(url=redirect_url)
+            except Exception:
+                # Column might not exist yet in some environments; continue with legacy create flow.
+                logger.warning("google_callback_upsert_failed_falling_back")
 
         # New user: create business with google_user_id
         insert_data = {
@@ -273,6 +310,7 @@ def google_callback(code: str, request: Request, state: str = None):
                 status_code=500, detail="Failed to save credentials")
 
         business_id = result.data[0]["id"]
+        _best_effort_sync_reviews(business_id)
         redirect_url = f"{settings.frontend_url}/onboarding?business_id={business_id}"
         logger.info("google_callback_new_business",
                     extra={"business_id": business_id})
@@ -283,52 +321,57 @@ def google_callback(code: str, request: Request, state: str = None):
         raise
     except Exception as e:
         logger.exception("google_callback_failed")
-        reason = str(type(e).__name__)
+        reason = str(type(e).__name__) if e else "oauth_failed"
         detail = str(e) if str(e) else ""
-        safe_detail = quote(detail[:180]) if detail else ""
-        safe_redirect = f"{settings.frontend_url}/login?error=oauth_failed&reason={reason}"
-        if safe_detail:
-            safe_redirect = f"{safe_redirect}&detail={safe_detail}"
-        resp = RedirectResponse(url=safe_redirect)
-        return resp
+        return _oauth_error_redirect(reason=reason, detail=detail)
 
 
 @router.get("/refresh/{business_id}")
 def refresh_token(business_id: str):
-    # gets the business from Supabase
-    result = supabase.table("businesses").select(
-        "*").eq("id", business_id).execute()
+    try:
+        # gets the business from Supabase
+        result = supabase.table("businesses").select(
+            "*").eq("id", business_id).execute()
 
-    if not result.data:
-        raise HTTPException(status_code=404, detail="Business not found")
+        if not result.data:
+            return _oauth_error_redirect(
+                reason="business_not_found", detail="Business not found for token refresh."
+            )
 
-    business = result.data[0]
+        business = result.data[0]
 
-    if not business.get("refresh_token"):
-        logger.warning("refresh_missing_token", extra={
-                       "business_id": business_id})
-        raise HTTPException(status_code=400, detail="No refresh token on file")
+        if not business.get("refresh_token"):
+            logger.warning("refresh_missing_token", extra={
+                           "business_id": business_id})
+            return _oauth_error_redirect(
+                reason="no_refresh_token", detail="No refresh token on file. Please reconnect Google."
+            )
 
-    # rebuilds credentials object from stored tokens
-    from google.oauth2.credentials import Credentials
-    credentials = Credentials(
-        token=business["access_token"],
-        refresh_token=business["refresh_token"],
-        token_uri="https://oauth2.googleapis.com/token",
-        client_id=settings.google_client_id,
-        client_secret=settings.google_client_secret
-    )
+        # rebuilds credentials object from stored tokens
+        from google.oauth2.credentials import Credentials
+        credentials = Credentials(
+            token=business["access_token"],
+            refresh_token=business["refresh_token"],
+            token_uri="https://oauth2.googleapis.com/token",
+            client_id=settings.google_client_id,
+            client_secret=settings.google_client_secret
+        )
 
-    # refreshes the access token using the refresh token
-    from google.auth.transport.requests import Request
-    credentials.refresh(Request())
+        # refreshes the access token using the refresh token
+        from google.auth.transport.requests import Request
+        credentials.refresh(Request())
 
-    # saves new access token and expiry back to Supabase
-    supabase.table("businesses").update({
-        "access_token": credentials.token,
-        "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None
-    }).eq("id", business_id).execute()
+        # saves new access token and expiry back to Supabase
+        supabase.table("businesses").update({
+            "access_token": credentials.token,
+            "token_expiry": credentials.expiry.isoformat() if credentials.expiry else None
+        }).eq("id", business_id).execute()
 
-    logger.info("refresh_success", extra={"business_id": business_id})
-
-    return {"message": "Token refreshed"}
+        logger.info("refresh_success", extra={"business_id": business_id})
+        return RedirectResponse(url=f"{settings.frontend_url}/dashboard?business_id={business_id}")
+    except Exception as e:
+        logger.exception("refresh_failed", extra={"business_id": business_id})
+        return _oauth_error_redirect(
+            reason="refresh_failed",
+            detail=str(e) if str(e) else "Failed to refresh Google token.",
+        )
