@@ -8,13 +8,16 @@ cd "$ROOT"
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/railway-deploy.sh login          # browser login (run in Terminal.app, not Cursor)
-  ./scripts/railway-deploy.sh list           # projects you can access
+  ./scripts/railway-deploy.sh login
+  ./scripts/railway-deploy.sh list
   ./scripts/railway-deploy.sh link <project-id> <service-name> [env]
-  ./scripts/railway-deploy.sh up             # upload this folder & build (uses repo-root Dockerfile)
-  ./scripts/railway-deploy.sh redeploy       # trigger redeploy of latest Git deployment (no upload)
-  ./scripts/railway-deploy.sh logs-build     # last build logs (needs link)
-  ./scripts/railway-deploy.sh logs-deploy    # last deploy/runtime logs (needs link)
+  ./scripts/railway-deploy.sh up
+  ./scripts/railway-deploy.sh redeploy
+  ./scripts/railway-deploy.sh logs-build
+  ./scripts/railway-deploy.sh logs-deploy
+
+zsh: if pasting blocks that start with "#", run first:  setopt interactivecomments
+     (otherwise lines like "# 1) ..." are not comments and you get "parse error near ')'".)
 
 Examples:
   railway list
