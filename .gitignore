@@ -1,3 +1,6 @@
+# Railway CLI local link (do not commit; contains project/service IDs)
+.railway/
+
 # Environment
 .env
 .env.*
