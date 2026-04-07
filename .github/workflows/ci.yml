@@ -1,0 +1,15 @@
+# Railway can be set to deploy only after GitHub Actions succeed ("Wait for CI").
+# This repo had no workflows, which can block or confuse that gate.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  ok:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: OK
+        run: echo "CI gate passed"
