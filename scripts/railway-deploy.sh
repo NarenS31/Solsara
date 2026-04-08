@@ -36,6 +36,16 @@ need_auth() {
   exit 1
 }
 
+# Newer Railway CLI may not create .railway/config.json; use status instead.
+need_linked() {
+  if railway status --json &>/dev/null; then
+    return 0
+  fi
+  echo "Not linked from this directory. Run:"
+  echo "  cd \"$ROOT\" && railway link -p <project-id> -s <service> -e production"
+  exit 1
+}
+
 cmd="${1:-}"
 case "$cmd" in
   login)
@@ -55,24 +65,24 @@ case "$cmd" in
     ;;
   up)
     need_auth
-    if [[ ! -f .railway/config.json ]]; then
-      echo "Not linked. Run: ./scripts/railway-deploy.sh link <project-id> <service-name>"
-      exit 1
-    fi
+    need_linked
     echo "Uploading $ROOT and building on Railway..."
     railway up -c --detach
     echo "Build kicked off. Logs: ./scripts/railway-deploy.sh logs-build"
     ;;
   redeploy)
     need_auth
+    need_linked
     railway redeploy -y
     ;;
   logs-build)
     need_auth
+    need_linked
     railway logs --latest --build -n 300
     ;;
   logs-deploy)
     need_auth
+    need_linked
     railway logs --latest --deployment -n 300
     ;;
   ""|-h|--help|help)
